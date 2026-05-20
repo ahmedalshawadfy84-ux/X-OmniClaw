@@ -464,7 +464,7 @@ releases/X-OmniClaw-v<version>-debug.apk
 <a id="acknowledgments"></a>
 ## 🙏 Acknowledgments
 
-**[AndroidClaw](https://github.com/SelectXn00b/HermesApp/tree/AndroidClaw)**[commitid:9e474d0e358114be075ee75b990392811339dd39]: This project was inspired by HermesApp's AndroidClaw sub-branch. The main branch of HermesAPP is a downstream redistribution project built on [Operit](https://github.com/AAswordman/Operit). Thanks to the Operit and HermesApp maintainers and communities.
+**[AndroidClaw](https://github.com/SelectXn00b/HermesApp/tree/AndroidClaw)**[commitid:9e474d0e358114be075ee75b990392811339dd39]: This project was inspired by HermesApp's AndroidClaw sub-branch. The main branch of HermesAPP is a downstream redistribution project built on [Operit](https://github.com/AAswordman/Operit). Thanks to the Operit and AndroidClaw maintainers and communities.
 
 **[Operit](https://github.com/AAswordman/Operit)**: We sincerely thank the Operit community for their kind reminders. The X-OmniClaw team takes this matter seriously, has completed a comprehensive self-review of the existing code at the earliest opportunity, and will continue to inspect and correct the related documentation, paper, and code.
 

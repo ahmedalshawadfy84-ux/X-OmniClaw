@@ -464,11 +464,11 @@ releases/X-OmniClaw-v<version>-debug.apk
 <a id="acknowledgments"></a>
 ## 🙏 致谢
 
-**[AndroidClaw](https://github.com/SelectXn00b/HermesApp/tree/AndroidClaw)** [commitid:9e474d0e358114be075ee75b990392811339dd39]：本项目受到 HermesApp子分支AndroidClaw的启发。HermesAPP主分支是基于[Operit](https://github.com/AAswordman/Operit)搭建的下游二次分发项目。感谢 Operit 和 HermesApp 的维护者与社区。
+**[AndroidClaw](https://github.com/SelectXn00b/HermesApp/tree/AndroidClaw)** [commitid:9e474d0e358114be075ee75b990392811339dd39]：本项目受到 HermesApp子分支AndroidClaw的启发。HermesAPP主分支是基于[Operit](https://github.com/AAswordman/Operit)搭建的下游二次分发项目。感谢 Operit 和 AndroidClaw 的维护者与社区。
 
 **[Operit](https://github.com/AAswordman/Operit)**：非常感谢 Operit 社区给我们带来的善意提醒。X-OmniClaw 团队对此高度重视，已在第一时间完成了现有代码的全面自查，并将持续做文档，论文及代码的相关查验和矫正。
 
-**[OpenClaw](https://github.com/openclaw/openclaw)**：本项目受到 开源项目 OpencClaw 的启发。感谢 OpenClaw 项目及其维护者与社区。
+**[OpenClaw](https://github.com/openclaw/openclaw)**：本项目受到 开源项目 OpenClaw 的启发。感谢 OpenClaw 项目及其维护者与社区。
 
 ---
 
