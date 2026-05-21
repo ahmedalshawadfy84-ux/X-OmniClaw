@@ -17,7 +17,7 @@
 
 **English** · [简体中文 Chinese](README_zh.md)
 
-**[🧭 Overview](#overview) | [📄 Paper](#paper) | [💡 Key features](#key-features) | [🎬 Demos](#use-cases-demo) | [🔧 Skills & tools](#skills-tools) | [🤖 Models](#models) | [🚀 Quick start](#quick-start) | [🛠️ Build from source](#build-from-source) | [📄 License](#license) | [🙏 Acknowledgments](#acknowledgments)**
+**[🧭 Overview](#overview) | [📄 Paper](#paper) | [💡 Key features](#key-features) | [🎬 Demos](#use-cases-demo) | [🔧 Skills & tools](#skills-tools) | [🤖 Models](#models) | [🚀 Quick start](#quick-start) | [🛠️ Build from source](#build-from-source) | [📄 License](#license) | [🙏 Acknowledgments](#acknowledgments) | [📝 Citation](#citation)**
 
 ---
 
@@ -481,3 +481,23 @@ releases/X-OmniClaw-v<version>-debug.apk
    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=OPPO-Mente-Lab/X-OmniClaw&type=date&legend=top-left" />
  </picture>
 </a>
+
+---
+
+<a id="citation"></a>
+## 📝 Citation
+
+If you use X-OmniClaw in your research or projects, please cite our technical report:
+
+```bibtex
+@misc{ren2026xomniclawtechnicalreportunified,
+  title = {X-OmniClaw Technical Report: A Unified Mobile Agent for Multimodal Understanding and Interaction},
+  author = {Ren, Xiaoming and Zhen, Ru and Li, Chao and Song, Yang and Hou, Qiuxia and Zhang, Yanhao and Liu, Peng and Qi, Qi and Zheng, Quanlong and Wu, Qi and Liao, Zhenyi and Pan, Binqiang and Ji, Haobo and Lu, Haonan},
+  year = {2026},
+  eprint = {2605.05765},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CV},
+  doi = {10.48550/arXiv.2605.05765},
+  url = {https://arxiv.org/abs/2605.05765}
+}
+```
