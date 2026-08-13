@@ -54,7 +54,7 @@ class ModelSetupActivity : AppCompatActivity() {
                     val key = provider.apiKey
                     !key.isNullOrBlank() &&
                             !key.startsWith("\${") &&
-                            key != "未配置"
+                            key != "Not configured"
                 }
                 return !hasRealKey
             } catch (e: Exception) {
@@ -69,13 +69,13 @@ class ModelSetupActivity : AppCompatActivity() {
                 name = "OpenRouter",
                 baseUrl = "https://openrouter.ai/api/v1",
                 api = "openai-completions",
-                hint = "OpenRouter 聚合了 Claude、GPT、Gemini 等多个模型，一个 Key 即可使用全部。\n注册即可免费使用，无需充值！",
+                hint = "OpenRouter 聚合了 Claude、GPT、Gemini 等多个模型，一个 Key 即可使用全部。\n注册即可Free使用，无需充值！",
                 models = listOf(
-                    ModelPreset("moonshotai/kimi-k2.6", "Kimi K2.6 (付费)", reasoning = true, contextWindow = 262144, maxTokens = 16384),
-                    ModelPreset("z-ai/glm-5v-turbo", "GLM 5V Turbo (付费)", contextWindow = 131072, maxTokens = 8192),
-                    ModelPreset("qwen/qwen3.6-flash", "Qwen 3.6 Flash (付费，推荐)", reasoning = true, contextWindow = 200000, maxTokens = 16384),
-                    ModelPreset("xiaomi/mimo-v2.5", "Xiaomi Mimo v2.5 (付费)", contextWindow = 200000, maxTokens = 16384),
-                    ModelPreset("openai/gpt-5.5", "GPT-5.5 (付费)", reasoning = true, contextWindow = 1048576, maxTokens = 32768),
+                    ModelPreset("moonshotai/kimi-k2.6", "Kimi K2.6 (Paid)", reasoning = true, contextWindow = 262144, maxTokens = 16384),
+                    ModelPreset("z-ai/glm-5v-turbo", "GLM 5V Turbo (Paid)", contextWindow = 131072, maxTokens = 8192),
+                    ModelPreset("qwen/qwen3.6-flash", "Qwen 3.6 Flash (Paid，Recommended)", reasoning = true, contextWindow = 200000, maxTokens = 16384),
+                    ModelPreset("xiaomi/mimo-v2.5", "Xiaomi Mimo v2.5 (Paid)", contextWindow = 200000, maxTokens = 16384),
+                    ModelPreset("openai/gpt-5.5", "GPT-5.5 (Paid)", reasoning = true, contextWindow = 1048576, maxTokens = 32768),
                 ),
                 authHeader = true
             ),
@@ -83,22 +83,22 @@ class ModelSetupActivity : AppCompatActivity() {
                 name = "Anthropic",
                 baseUrl = "https://api.anthropic.com/v1",
                 api = "anthropic-messages",
-                hint = "Anthropic 官方 API，直连 Claude。注册: console.anthropic.com",
+                hint = "Anthropic Official API, direct Claude access. Sign up: console.anthropic.com",
                 models = listOf(
-                    ModelPreset("claude-sonnet-4-20250514", "Claude Sonnet 4 (推荐)"),
+                    ModelPreset("claude-sonnet-4-20250514", "Claude Sonnet 4 (Recommended)"),
                     ModelPreset("claude-opus-4-20250514", "Claude Opus 4"),
-                    ModelPreset("claude-haiku-3-5-20241022", "Claude 3.5 Haiku (快速)")
+                    ModelPreset("claude-haiku-3-5-20241022", "Claude 3.5 Haiku (Fast)")
                 )
             ),
             "openai" to ProviderPreset(
                 name = "OpenAI",
                 baseUrl = "https://api.openai.com/v1",
                 api = "openai-completions",
-                hint = "OpenAI 官方 API。注册: platform.openai.com",
+                hint = "OpenAI Official API. Sign up: platform.openai.com",
                 models = listOf(
-                    ModelPreset("gpt-4.1", "GPT-4.1 (推荐)"),
-                    ModelPreset("gpt-4.1-mini", "GPT-4.1 Mini (快速)"),
-                    ModelPreset("o3", "o3 (推理)")
+                    ModelPreset("gpt-4.1", "GPT-4.1 (Recommended)"),
+                    ModelPreset("gpt-4.1-mini", "GPT-4.1 Mini (Fast)"),
+                    ModelPreset("o3", "o3 (Reasoning)")
                 )
             ),
             "custom" to ProviderPreset(
@@ -124,7 +124,7 @@ class ModelSetupActivity : AppCompatActivity() {
 
         supportActionBar?.apply {
             setDisplayHomeAsUpEnabled(true)
-            title = "模型设置"
+            title = "Model Setup"
         }
 
         setupDefaultMode()
@@ -143,12 +143,12 @@ class ModelSetupActivity : AppCompatActivity() {
         // 默认：OpenRouter（与欢迎文案、chip 默认选中一致）
         applyProviderPreset("openrouter")
 
-        // 打开 OpenRouter Keys 页
+        // Open OpenRouter Keys 页
         binding.tvOpenOpenrouter.setOnClickListener {
             try {
                 startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://openrouter.ai/keys")))
             } catch (e: Exception) {
-                Toast.makeText(this, "无法打开浏览器", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Unable to open browser", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -161,12 +161,12 @@ class ModelSetupActivity : AppCompatActivity() {
             advancedExpanded = !advancedExpanded
             binding.layoutAdvanced.visibility = if (advancedExpanded) View.VISIBLE else View.GONE
             binding.tvAdvanced.text = if (advancedExpanded) {
-                "⚙️ 收起高级选项"
+                "⚙️ Collapse advanced options"
             } else {
-                "⚙️ 使用其他服务商（Anthropic / OpenAI 等）"
+                "⚙️ Use other providers (Anthropic / OpenAI, etc.)"
             }
 
-            // 收起高级选项时恢复为与首次引导一致：OpenRouter
+            // Collapse advanced options时恢复为与首次引导一致：OpenRouter
             if (!advancedExpanded && selectedProvider != "openrouter") {
                 selectedProvider = "openrouter"
                 applyProviderPreset("openrouter")
@@ -235,10 +235,10 @@ class ModelSetupActivity : AppCompatActivity() {
                 else -> "API Key"
             }
             (tilApiKey as? com.google.android.material.textfield.TextInputLayout)?.helperText = when (providerKey) {
-                "openrouter" -> "以 sk-or-v1- 开头"
-                "anthropic" -> "以 sk-ant- 开头"
-                "openai" -> "以 sk- 开头"
-                "custom" -> "支持 sk-、nvapi- 或其他兼容服务商密钥"
+                "openrouter" -> "Starts with sk-or-v1-"
+                "anthropic" -> "Starts with sk-ant-"
+                "openai" -> "Starts with sk-"
+                "custom" -> "Supports sk-, nvapi-, or other compatible provider keys"
                 else -> null
             }
 
@@ -255,7 +255,7 @@ class ModelSetupActivity : AppCompatActivity() {
             tvProviderHint.text = preset.hint
             tvProviderHint.visibility = if (advancedExpanded) View.VISIBLE else View.GONE
 
-            // 模型选择：OpenRouter 和 Custom 在高级选项下展示。
+            // 模型选择：OpenRouter 和 Custom 在Advanced options下展示。
             if (providerKey == "custom") {
                 tilModel.visibility = if (advancedExpanded) View.VISIBLE else View.GONE
                 bindCustomModelPicker()
@@ -292,11 +292,11 @@ class ModelSetupActivity : AppCompatActivity() {
             binding.tilApiBase.error = null
 
             if (apiKey.isBlank()) {
-                binding.tilApiKey.error = "请输入 API Key"
+                binding.tilApiKey.error = "Please enter an API Key"
                 return@setOnClickListener
             }
             if (baseUrl.isBlank()) {
-                binding.tilApiBase.error = "请输入 Base URL"
+                binding.tilApiBase.error = "Please enter Base URL"
                 return@setOnClickListener
             }
 
@@ -324,7 +324,7 @@ class ModelSetupActivity : AppCompatActivity() {
 
     private fun setupButtons() {
         binding.btnSkip.setOnClickListener {
-            Log.i(TAG, "用户跳过模型配置引导，使用默认配置")
+            Log.i(TAG, "User skipped model setup and used default settings")
             saveDefaultAndFinish()
         }
 
@@ -339,8 +339,8 @@ class ModelSetupActivity : AppCompatActivity() {
                 return
             }
 
-            // 跳过引导时直接写入随包默认配置：
-            // 这样即使用户不填 API Key，也会使用 xomniclaw.json.default.txt 里的预置 key。
+            // Skip引导时直接写入随包默认Settings：
+            // 这样即使User不填 API Key，也会使用 xomniclaw.json.default.txt 里的预置 key。
             val configDir = java.io.File("/sdcard/.xomniclaw")
             if (!configDir.exists()) {
                 configDir.mkdirs()
@@ -351,22 +351,22 @@ class ModelSetupActivity : AppCompatActivity() {
                 .use { it.readText() }
             target.writeText(bundledDefault)
 
-            // 刷新配置缓存，确保后续页面读取到刚写入的默认值。
+            // RefreshSettings缓存，确保后续页面读取到刚写入的默认值。
             configLoader.reloadOmniClawConfig()
 
-            Log.i(TAG, "用户跳过模型配置，已写入内置默认配置: ${target.absolutePath}")
+            Log.i(TAG, "User skipped model setup; built-in default settings written: ${target.absolutePath}")
             markSetupSeen()
-            Toast.makeText(this, "已使用默认配置", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Default configuration applied", Toast.LENGTH_SHORT).show()
             finish()
         } catch (e: Exception) {
-            Log.e(TAG, "跳过并写入默认配置失败", e)
-            Toast.makeText(this, "跳过失败，请先授予文件管理权限后重试", Toast.LENGTH_LONG).show()
+            Log.e(TAG, "Skip and default-settings write failed", e)
+            Toast.makeText(this, "Skip failed. Grant file management permission and try again", Toast.LENGTH_LONG).show()
         }
     }
 
     /**
      * Android 11+ 写 /sdcard/.xomniclaw 需要 MANAGE_EXTERNAL_STORAGE。
-     * 若未授权，则先引导用户进入系统设置授权，再由用户重试“跳过”。
+     * 若Not granted，则先引导UserEnterSystemSettings授权，再由User重试“Skip”。
      */
     private fun ensureStoragePermissionForDefaultConfig(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
@@ -380,14 +380,14 @@ class ModelSetupActivity : AppCompatActivity() {
                 data = Uri.parse("package:$packageName")
             })
         } catch (e: Exception) {
-            Log.w(TAG, "无法打开应用级文件管理权限页，改为通用权限页", e)
+            Log.w(TAG, "Unable to open app-specific file management permission page; opening the general permissions page instead", e)
             try {
                 startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
             } catch (e2: Exception) {
-                Log.e(TAG, "无法打开文件管理权限设置页", e2)
+                Log.e(TAG, "Unable to open file management permission settings page", e2)
             }
         }
-        Toast.makeText(this, "请先授予“所有文件访问权限”，然后再点一次“跳过”", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "Please grant All files access, then tap Skip again", Toast.LENGTH_LONG).show()
         return false
     }
 
@@ -400,12 +400,12 @@ class ModelSetupActivity : AppCompatActivity() {
         // If user provided a key, use it; otherwise use the built-in encrypted key for built-in OpenRouter only.
         val apiKey = if (userInputKey.isNullOrEmpty()) {
             if (selectedProvider == "custom") {
-                binding.tilApiKey.error = "请输入 API Key"
+                binding.tilApiKey.error = "Please enter an API Key"
                 return
             }
             val builtInKey = com.shijing.xomniclaw.config.BuiltInKeyProvider.getKey()
             if (builtInKey.isNullOrEmpty()) {
-                binding.tilApiKey.error = "请输入 API Key"
+                binding.tilApiKey.error = "Please enter an API Key"
                 return
             }
             builtInKey
@@ -420,7 +420,7 @@ class ModelSetupActivity : AppCompatActivity() {
             null
         }
         if (selectedProvider == "custom" && apiBase.isNullOrBlank()) {
-            binding.tilApiBase.error = "请输入 Base URL"
+            binding.tilApiBase.error = "Please enter Base URL"
             return
         }
         binding.tilApiBase.error = null
@@ -434,7 +434,7 @@ class ModelSetupActivity : AppCompatActivity() {
         val matchedPreset = choice
 
         if (selectedProvider == "custom" && modelId.isBlank()) {
-            binding.tilModel.error = "请先 Fetch models 并选择模型"
+            binding.tilModel.error = "Please fetch models and select a model first"
             return
         }
         binding.tilModel.error = null
@@ -464,7 +464,7 @@ class ModelSetupActivity : AppCompatActivity() {
             updatedProviders[providerName] = newProvider
 
             val defaultModelId = if (modelId.startsWith("$providerName/")) {
-                // modelId 已为 OpenRouter 完整路由时可含多级路径 (e.g. "z-ai/glm-4.5-air:free")
+                // modelId 已为 OpenRouter 完整路由时可含多级Path (e.g. "z-ai/glm-4.5-air:free")
                 modelId
             } else {
                 "$providerName/$modelId"
@@ -482,14 +482,14 @@ class ModelSetupActivity : AppCompatActivity() {
 
             configLoader.saveOmniClawConfig(updatedConfig)
 
-            Log.i(TAG, "✅ 模型配置已保存: provider=$providerName, model=$modelId")
+            Log.i(TAG, "✅ Model configuration saved: provider=$providerName, model=$modelId")
             markSetupSeen()
-            Toast.makeText(this, "✅ 配置完成！", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "✅ Configuration complete!", Toast.LENGTH_SHORT).show()
             finish()
 
         } catch (e: Exception) {
-            Log.e(TAG, "保存配置失败", e)
-            Toast.makeText(this, "保存失败: ${e.message}", Toast.LENGTH_LONG).show()
+            Log.e(TAG, "Failed to save configuration", e)
+            Toast.makeText(this, "Save failed: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
