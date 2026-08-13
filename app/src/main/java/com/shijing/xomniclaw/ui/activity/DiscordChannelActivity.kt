@@ -23,7 +23,7 @@ import com.shijing.xomniclaw.config.ConfigLoader
 import kotlinx.coroutines.launch
 
 /**
- * Discord Channel 配置页面
+ * Discord Channel Settings页面
  */
 class DiscordChannelActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,11 +47,11 @@ fun DiscordChannelScreen(
     val scope = rememberCoroutineScope()
     val configLoader = remember { ConfigLoader(context) }
 
-    // 加载配置
+    // 加载Settings
     val openClawConfig = remember { configLoader.loadOmniClawConfig() }
     val savedConfig = remember { openClawConfig.channels.discord }
 
-    // 状态变量（对齐 Discord 配置）
+    // Status变量（对齐 Discord Settings）
     var enabled by remember { mutableStateOf(savedConfig?.enabled ?: false) }
     var token by remember { mutableStateOf(savedConfig?.token ?: "") }
     var name by remember { mutableStateOf(savedConfig?.name ?: "OmniClaw Bot") }
@@ -68,17 +68,17 @@ fun DiscordChannelScreen(
                 title = { Text("Discord Channel") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, "返回")
+                        Icon(Icons.Filled.ArrowBack, "Back")
                     }
                 },
                 actions = {
                     TextButton(
                         onClick = {
                             scope.launch {
-                                // 读取当前完整配置
+                                // 读取Current完整Settings
                                 val currentConfig = configLoader.loadOmniClawConfig()
 
-                                // 构建 Discord 配置
+                                // 构建 Discord Settings
                                 val updatedDiscordConfig = com.shijing.xomniclaw.config.DiscordChannelConfig(
                                     enabled = enabled,
                                     token = token.takeIf { it.isNotBlank() },
@@ -91,7 +91,7 @@ fun DiscordChannelScreen(
                                     replyToMode = replyToMode
                                 )
 
-                                // 更新完整配置
+                                // 更新完整Settings
                                 val updatedChannelsConfig = currentConfig.channels.copy(
                                     discord = updatedDiscordConfig
                                 )
@@ -99,14 +99,14 @@ fun DiscordChannelScreen(
                                     channels = updatedChannelsConfig
                                 )
 
-                                // 保存到 xomniclaw.json
+                                // Saved to xomniclaw.json
                                 configLoader.saveOmniClawConfig(updatedConfig)
 
                                 showSaveSuccess = true
                             }
                         }
                     ) {
-                        Text("保存")
+                        Text("Save")
                     }
                 }
             )
@@ -120,7 +120,7 @@ fun DiscordChannelScreen(
                 Snackbar(
                     modifier = Modifier.padding(16.dp)
                 ) {
-                    Text("配置已保存，需要重启应用生效")
+                    Text("Settings saved. Restart the app to apply changes.")
                 }
             }
         }
@@ -144,11 +144,11 @@ fun DiscordChannelScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "启用 Discord Channel",
+                            text = "Enable Discord Channel",
                             style = MaterialTheme.typography.titleMedium
                         )
                         Text(
-                            text = "开启后将接收 Discord 消息",
+                            text = "When enabled, Discord messages will be received",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -160,9 +160,9 @@ fun DiscordChannelScreen(
                 }
             }
 
-            // 基础配置
+            // Basic configuration
             Text(
-                text = "基础配置",
+                text = "Basic configuration",
                 style = MaterialTheme.typography.titleLarge
             )
 
@@ -178,15 +178,15 @@ fun DiscordChannelScreen(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Bot Name (可选)") },
+                label = { Text("Bot Name (optional)") },
                 placeholder = { Text("OmniClaw Bot") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
 
-            // DM 策略
+            // DM Policy
             Text(
-                text = "DM (私聊) 策略",
+                text = "DM (DM) Policy",
                 style = MaterialTheme.typography.titleLarge
             )
 
@@ -197,19 +197,19 @@ fun DiscordChannelScreen(
                 FilterChip(
                     selected = dmPolicy == "open",
                     onClick = { dmPolicy = "open" },
-                    label = { Text("Open - 接受所有 DM") },
+                    label = { Text("Open - accept all DMs") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 FilterChip(
                     selected = dmPolicy == "pairing",
                     onClick = { dmPolicy = "pairing" },
-                    label = { Text("Pairing - 需要管理员审批 (推荐)") },
+                    label = { Text("Pairing - Requires admin approval (Recommended)") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 FilterChip(
                     selected = dmPolicy == "allowlist",
                     onClick = { dmPolicy = "allowlist" },
-                    label = { Text("Allowlist - 仅允许白名单用户") },
+                    label = { Text("Allowlist - Allow only whitelisted users") },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -218,7 +218,7 @@ fun DiscordChannelScreen(
                 OutlinedTextField(
                     value = allowFrom,
                     onValueChange = { allowFrom = it },
-                    label = { Text("白名单用户 ID (每行一个)") },
+                    label = { Text("Whitelisted user IDs (one per line)") },
                     placeholder = { Text("123456789012345678\n987654321098765432") },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -227,9 +227,9 @@ fun DiscordChannelScreen(
                 )
             }
 
-            // Guild (服务器) 策略
+            // Guild (Server) Policy
             Text(
-                text = "Guild (服务器) 策略",
+                text = "Guild (Server) Policy",
                 style = MaterialTheme.typography.titleLarge
             )
 
@@ -240,20 +240,20 @@ fun DiscordChannelScreen(
                 FilterChip(
                     selected = groupPolicy == "open",
                     onClick = { groupPolicy = "open" },
-                    label = { Text("Open - 接受所有频道 (需 @提及)") },
+                    label = { Text("Open - Accept all channels (requires @mention)") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 FilterChip(
                     selected = groupPolicy == "allowlist",
                     onClick = { groupPolicy = "allowlist" },
-                    label = { Text("Allowlist - 仅允许配置的频道 (推荐)") },
+                    label = { Text("Allowlist - Allow only configured channels (Recommended)") },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            // 回复模式
+            // Reply mode
             Text(
-                text = "回复模式",
+                text = "Reply mode",
                 style = MaterialTheme.typography.titleLarge
             )
 
@@ -264,24 +264,24 @@ fun DiscordChannelScreen(
                 FilterChip(
                     selected = replyToMode == "off",
                     onClick = { replyToMode = "off" },
-                    label = { Text("Off - 不使用回复 (推荐)") },
+                    label = { Text("Off - Do not use replies (Recommended)") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 FilterChip(
                     selected = replyToMode == "always",
                     onClick = { replyToMode = "always" },
-                    label = { Text("Always - 总是使用回复") },
+                    label = { Text("Always - Always use replies") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 FilterChip(
                     selected = replyToMode == "threads",
                     onClick = { replyToMode = "threads" },
-                    label = { Text("Threads - 在线程中使用回复") },
+                    label = { Text("Threads - Use replies in threads") },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            // 配置提示
+            // Settings提示
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -293,16 +293,16 @@ fun DiscordChannelScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "⚠️ 配置说明",
+                        text = "⚠️ Configuration notes",
                         style = MaterialTheme.typography.titleSmall
                     )
                     Text(
                         text = """
-                            1. 需要先在 Discord Developer Portal 创建 Bot
-                            2. 启用 MESSAGE CONTENT INTENT (特权 Intent)
-                            3. 获取 Bot Token 并填入上方
-                            4. 将 Bot 邀请到你的服务器
-                            5. 详细配置参见：extensions/discord/SETUP_GUIDE.md
+                            1. Create a bot in Discord Developer Portal first
+                            2. Enable MESSAGE CONTENT INTENT (Privileged Intent)
+                            3. Get the bot token and enter it above
+                            4. Invite the bot to your server
+                            5. See details in：extensions/discord/SETUP_GUIDE.md
                         """.trimIndent(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
