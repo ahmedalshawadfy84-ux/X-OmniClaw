@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <!-- 统计信息 -->
+    <!-- statistics -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -18,14 +18,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="16dp"
-            android:text="总计: 0 | 内置: 0 | 用户: 0 | 管理: 0"
+            android:text="Total: 0 | Built-in: 0 | User: 0 | Managed: 0"
             android:textSize="14sp"
             android:textColor="@android:color/black"
             android:gravity="center" />
 
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- 下拉刷新 + 列表 -->
+    <!-- pull-to-refresh + list -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
