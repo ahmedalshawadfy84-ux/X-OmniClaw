@@ -4,21 +4,21 @@ import com.shijing.xomniclaw.scheduler.ScheduledTask
 import java.util.Locale
 
 /**
- * 定时任务状态页文案。
+ * Scheduled tasksStatus页文案。
  */
 fun formatTaskSortOptionLabel(option: ScheduledTaskSortOption): String {
     return when (option) {
-        ScheduledTaskSortOption.NEXT_TRIGGER_ASC -> "按下次触发时间"
-        ScheduledTaskSortOption.LAST_TRIGGER_DESC -> "按最近触发时间"
-        ScheduledTaskSortOption.UPDATED_DESC -> "按最近更新时间"
-        ScheduledTaskSortOption.NAME_ASC -> "按任务名称"
+        ScheduledTaskSortOption.NEXT_TRIGGER_ASC -> "By next trigger time"
+        ScheduledTaskSortOption.LAST_TRIGGER_DESC -> "By latest trigger time"
+        ScheduledTaskSortOption.UPDATED_DESC -> "By latest update time"
+        ScheduledTaskSortOption.NAME_ASC -> "By task name"
     }
 }
 
 /**
- * 状态页里的任务筛选与排序逻辑。
+ * Status页里的Task筛选与排序逻辑。
  *
- * 先搜索再排序，保证用户看到的是命中的结果集。
+ * 先搜索再排序，保证User看到的Yes命中的结果集。
  */
 fun filterAndSortScheduledTasks(
     tasks: List<ScheduledTask>,
