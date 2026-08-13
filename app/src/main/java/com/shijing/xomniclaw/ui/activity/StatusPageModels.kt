@@ -4,7 +4,7 @@ import com.shijing.xomniclaw.scheduler.ScheduledTask
 import com.shijing.xomniclaw.agent.memory.evolution.MemoryEvolutionStatus
 
 /**
- * 状态页里的 Memory 概览。
+ * Status页里的 Memory 概览。
  */
 data class MemoryStatusSnapshot(
     val longTermMemoryExists: Boolean,
@@ -19,7 +19,7 @@ data class MemoryStatusSnapshot(
 )
 
 /**
- * 相册记忆与画像设置的状态页快照。
+ * Album记忆与画像Settings的Status页快照。
  */
 data class GalleryMemorySettingsState(
     val featureEnabled: Boolean,
@@ -38,7 +38,7 @@ data class MemoryDetailState(
 )
 
 /**
- * 定时任务排序方式。
+ * Scheduled tasks排序方式。
  */
 enum class ScheduledTaskSortOption {
     NEXT_TRIGGER_ASC,
@@ -48,7 +48,7 @@ enum class ScheduledTaskSortOption {
 }
 
 /**
- * 定时任务编辑表单状态。
+ * Scheduled tasks编辑表单Status。
  *
  * 保留字符串字段，便于直接映射到输入框。
  */
