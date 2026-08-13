@@ -23,8 +23,8 @@ import androidx.compose.ui.unit.sp
 
 /**
  * 按住录音按钮
- * 长按开始语音识别，松开后回调识别文本。
- * 按住时有红色脉冲动画和 "识别中..." 提示。
+ * 长按开始Speech recognition，松开后回调识别文本。
+ * 按住时有红色脉冲动画和 "Recognizing..." 提示。
  */
 @Composable
 fun VoiceRecordButton(
@@ -53,10 +53,10 @@ fun VoiceRecordButton(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
     ) {
-        // "识别中..." 浮动提示
+        // "Recognizing..." 浮动提示
         if (isListening) {
             Text(
-                text = "识别中...",
+                text = "Recognizing...",
                 style = TextStyle(
                     fontSize = 11.sp,
                     color = Color(0xFFFF3B30),
@@ -76,7 +76,7 @@ fun VoiceRecordButton(
                     detectTapGestures(
                         onPress = {
                             onPressStart()
-                            // 等待用户抬手
+                            // 等待User抬手
                             val released = tryAwaitRelease()
                             onPressEnd()
                         }
@@ -86,7 +86,7 @@ fun VoiceRecordButton(
         ) {
             Icon(
                 imageVector = Icons.Default.Mic,
-                contentDescription = "语音输入",
+                contentDescription = "Voice input",
                 tint = iconTint,
                 modifier = Modifier.size(22.dp)
             )
