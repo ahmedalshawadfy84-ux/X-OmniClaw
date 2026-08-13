@@ -94,7 +94,7 @@ object MainEntryNew {
     private val progressEventCounter = AtomicLong(0)
 
     /**
-     * 统一日志格式：输出 [文件名:行号] 方法 -> 消息，便于定位 Android 侧日志来源。
+     * 统一Logs格式：输出 [文件名:行号] 方法 -> 消息，便于定位 Android 侧LogsSource。
      */
     private fun logd(message: String) {
         CallerAwareLog.d(TAG, message)
@@ -105,16 +105,16 @@ object MainEntryNew {
     }
 
     /**
-     * 在最终回复后附加「本回合」LLM API token 累加（多轮迭加总）；不并入 session 落盘原文，仅用于浮窗与聊天广播。
-     * 若上游未返回 usage，Python 仍传 0。
+     * 在最终回复后附加「本回合」LLM API token 累加（多turns迭加总）；不并入 session 落盘原文，仅用于浮窗与聊天广播。
+     * 若上游未Back usage，Python 仍传 0。
      */
     private fun appendTokenUsageForDisplay(plain: String, usage: LlmTokenUsage?): String {
         if (usage == null) return plain
-        return plain + "\n\n—\n" + "本回合 LLM tokens：输入 ${usage.promptTokens}，输出 ${usage.completionTokens}，合计 ${usage.totalTokens}（多轮请求累加；未返回时可能为 0）"
+        return plain + "\n\n—\n" + "This turn LLM tokens: input  ${usage.promptTokens} , output  ${usage.completionTokens} , total  ${usage.totalTokens}（summed across multiple requests; may be 0 when not returned）"
     }
 
     /**
-     * 供飞书/Discord 等与主界面一致的最终展示文案（带 token 行）；不落盘 session。
+     * 供Feishu/Discord 等与主界面一致的最终展示文案（带 token 行）；不落盘 session。
      */
     fun formatAgentReplyWithTokenUsage(plain: String, usage: LlmTokenUsage?) =
         appendTokenUsageForDisplay(plain, usage)
@@ -147,16 +147,16 @@ object MainEntryNew {
      * 每次 runWithSession 各自持有的 UI 回写上下文。
      *
      * 关键点：
-     * 1. 进度事件必须绑死到发起这次运行的 session，不能依赖全局变量
+     * 1. 进度事件必须绑死到发起这次运行的 session，不能Dependencies全局变量
      * 2. block reply 去重也必须按 run 隔离，避免 A 会话影响 B 会话的最终回复判断
      */
     private data class SessionUiContext(
         val sessionId: String,
         val currentUserInput: String,
         val lastBlockReplyText: AtomicReference<String?> = AtomicReference(null),
-        // 记录本轮 user 是否已提前落盘，避免 thinking 抢在 user 前面。
+        // 记录本turns user YesNo已提前落盘，避免 thinking 抢在 user 前面。
         val userMessagePersisted: AtomicReference<Boolean> = AtomicReference(false),
-        /** 当前会话最近一次迭代步号，用于给思考过程打上 Step 索引。 */
+        /** Current会话最近一次迭代步号，用于给思考过程打上 Step 索引。 */
         val currentStepIndex: AtomicLong = AtomicLong(0)
     )
 
@@ -178,7 +178,7 @@ object MainEntryNew {
     }
 
     /**
-     * 状态页 Token 展示快照：本会话累计 + 全局累计。
+     * Status页 Token 展示快照：This session total + Global total。
      */
     data class TokenUsageStatus(
         val sessionId: String? = null,
@@ -190,12 +190,12 @@ object MainEntryNew {
     val uiProgressFlow: SharedFlow<UiProgressEvent> = _uiProgressFlow
 
     /**
-     * 会话 Agent 是否仍在执行（与「首条回复是否已写入」无关）。
-     * 用于聊天页停止按钮：避免 runWithSession 立即返回后误把 isLoading 置 false。
+     * 会话 Agent YesNo仍在执行（与「首条回复YesNo已写入」无关）。
+     * 用于聊天页停止按钮：避免 runWithSession 立即Back后误把 isLoading 置 false。
      */
     private val _agentSessionRunning = MutableStateFlow(false)
     val agentSessionRunning: StateFlow<Boolean> = _agentSessionRunning.asStateFlow()
-    /** 当前正在执行的会话集合（用于按会话隔离 loading/停止逻辑）。 */
+    /** Current正在执行的会话集合（用于按会话隔离 loading/停止逻辑）。 */
     private val _runningSessionIds = MutableStateFlow<Set<String>>(emptySet())
     val runningSessionIds: StateFlow<Set<String>> = _runningSessionIds.asStateFlow()
     private val activeSessionJobs = ConcurrentHashMap<String, Job>()
@@ -233,7 +233,7 @@ object MainEntryNew {
         Log.d(TAG, "Initializing MainEntryNew...")
 
         try {
-            // 启动时先恢复全局累计，保证状态页首帧即可显示历史总量。
+            // 启动时先恢复Global total，保证Status页首帧即可显示历史总量。
             val persistedGlobalCounter = loadGlobalTokenCounterFromStorage()
             _tokenUsageStatus.value = _tokenUsageStatus.value.copy(globalCounter = persistedGlobalCounter)
 
@@ -284,7 +284,7 @@ object MainEntryNew {
             )
             Log.d(TAG, "✓ ContextBuilder initialized")
 
-            // 5. Initialize session manager (统一使用当前工作目录，避免继续创建旧版 .omniclaw 路径)
+            // 5. Initialize session manager (统一使用Current工作目录，避免继续创建旧版 .omniclaw Path)
             val workspaceDir = File(Environment.getExternalStorageDirectory(), ".xomniclaw/workspace")
             if (!workspaceDir.exists()) {
                 workspaceDir.mkdirs()
@@ -326,7 +326,7 @@ object MainEntryNew {
 
     /** 为每次会话运行创建独立 AgentLoop，避免并发会话共享 progressFlow 导致串线。 */
     private fun createSessionScopedAgentLoop(application: Application): AgentLoop {
-        // 快速修复：每次会话都创建“新鲜” Provider/ConfigLoader，避免单例缓存持有旧 API Key。
+        // Fast修复：每次会话都创建“新鲜” Provider/ConfigLoader，避免单例缓存持有旧 API Key。
         val sessionConfigLoader = ConfigLoader(application.applicationContext)
         val sessionLlmProvider = com.shijing.xomniclaw.providers.UnifiedLLMProvider(application.applicationContext)
         return AgentLoop(
@@ -358,7 +358,7 @@ object MainEntryNew {
 
     /**
      * 前后台切换后对运行态进行一次自愈：
-     * 以“仍处于活跃状态的 Job”为准，回填 runningSessionIds，避免 UI 状态条误清空。
+     * 以“仍处于活跃Status的 Job”为准，回填 runningSessionIds，避免 UI Status条误清空。
      */
     fun reconcileRunningSessionsFromActiveJobs(): Set<String> {
         val activeJobIds = activeSessionJobs.entries
@@ -379,7 +379,7 @@ object MainEntryNew {
     /**
      * 将单次 Agent 运行的 token 使用量累加到：
      * 1) 本会话（内存态）
-     * 2) 全局累计（内存 + MMKV 持久化）
+     * 2) Global total（内存 + MMKV 持久化）
      */
     private fun accumulateTokenUsage(sessionId: String, usage: LlmTokenUsage?) {
         if (usage == null) return
@@ -402,7 +402,7 @@ object MainEntryNew {
     }
 
     /**
-     * 若 UI 切到其它会话，可主动切换“本会话累计”展示对象（不影响累计值本身）。
+     * 若 UI 切到其它会话，可主动切换“This session total”展示对象（不影响累计值本身）。
      */
     fun syncTokenUsageForSession(sessionId: String) {
         val sessionCounter = sessionTokenCounters[sessionId] ?: TokenUsageCounter()
@@ -413,8 +413,8 @@ object MainEntryNew {
     }
 
     /**
-     * 给非 AgentLoop 入口（如语音视觉直连链路）上报 token 增量。
-     * 若未显式传入 sessionId，则优先沿用状态页当前展示会话。
+     * 给非 AgentLoop entry（如语音视觉直连链路）上报 token 增量。
+     * 若未显式传入 sessionId，则优先沿用Status页Current展示会话。
      */
     fun recordExternalTokenUsage(
         usage: LlmTokenUsage?,
@@ -505,7 +505,7 @@ object MainEntryNew {
         }
 
         if (keepScreenAwake) {
-            // 定时自动化在息屏场景下需要持续保持屏幕和 CPU 活跃，避免亮屏后又快速熄灭。
+            // 定时Auto化在息屏场景下需要持续保持屏幕和 CPU 活跃，避免亮屏后又Fast熄灭。
             WakeLockManager.acquireScreenWakeLock()
         }
 
@@ -527,11 +527,11 @@ object MainEntryNew {
                     Log.d(TAG, "💬 User input: $userInput")
                     Log.d(TAG, "📋 Context messages: ${contextHistory.size}")
 
-                    // Agent 开始执行 → 自动显示浮动窗口
+                    // Agent 开始执行 → Auto显示浮动窗口
                     SessionFloatWindow.setAgentRunning(true, application)
                     SessionFloatWindow.updateSessionInfo(
                         title = "Agent 启动中",
-                        content = "任务: ${userInput.take(60)}"
+                        content = "Task: ${userInput.take(60)}"
                     )
 
                     // 1. Build system prompt
@@ -554,7 +554,7 @@ object MainEntryNew {
                     com.shijing.xomniclaw.gateway.GatewayServer.broadcastChatMessage(
                         effectiveSessionId, "user", userInput
                     )
-                    // 先把本轮 user 落盘，保证后续 thinking 永远在 user 之后。
+                    // 先把本turns user 落盘，保证后续 thinking 永远在 user 之后。
                     ensureUserMessagePersisted(session, sessionUiContext)
 
                     // 3. Start progress listening
@@ -590,8 +590,8 @@ object MainEntryNew {
                         Log.d(TAG, "Token usage: prompt=${it.promptTokens} completion=${it.completionTokens} total=${it.totalTokens}")
                     }
 
-                    // 任务已经得到最终结果：按真实完成状态立即关闭步骤悬浮窗，
-                    // 不再依赖最终回复文案中的关键词来判断。
+                    // Task已经得到最终结果：按真实CompletedStatus立即CloseStepOverlay，
+                    // 不再Dependencies最终回复文案中的关键词来判断。
                     SessionFloatWindow.finishTask()
 
                     // 5. Broadcast AI response (skip if already sent via block reply)
@@ -626,7 +626,7 @@ object MainEntryNew {
                     )
                     deltaMessages.filter { it.role != "system" }.forEach { message ->
                         if (message.role == "user" && sessionUiContext.userMessagePersisted.get()) {
-                            // 已在起跑阶段落盘过本轮 user，收尾时跳过重复 user。
+                            // 已在起跑阶段落盘过本turns user，收尾时Skip重复 user。
                             return@forEach
                         }
                         val sanitizedMessage = if (message.role == "assistant") {
@@ -650,7 +650,7 @@ object MainEntryNew {
                     if (shouldReturnToMain) {
                         bringMainUiToFrontAndNotify(
                             sessionId = effectiveSessionId,
-                            notice = "✅ 复杂任务已完成，已返回主界面。"
+                            notice = "✅ Complex task completed; returned to the main screen."
                         )
                     }
                 } finally {
@@ -690,34 +690,34 @@ object MainEntryNew {
                     WakeLockManager.releaseScreenWakeLock()
                 }
 
-                // 用户主动取消与真正异常使用不同文案，避免误导为代码故障。
+                // User主动Cancel与真正异常使用不同文案，避免误导为代码故障。
                 val errorMessage = if (cancelledByUser) {
                     buildString {
-                        append("🛑 已停止执行\n\n")
-                        append("你已手动取消当前任务，这不是系统错误。\n\n")
-                        append("你可以：\n")
+                        append("🛑 Execution stopped\n\n")
+                        append("You manually cancelled the current task. This is not a system error.\n\n")
+                        append("You can:\n")
                         append("- 直接发送新指令继续\n")
-                        append("- 或点击“新对话”开始新的会话")
+                        append("- 或点击“New Chat”开始新的会话")
                     }
                 } else {
                     buildString {
                         append("❌ 执行出错:\n\n")
-                        append("**错误**: ${exception.message}\n\n")
+                        append("**Error**: ${exception.message}\n\n")
 
-                        // 如果是 LLM 异常，添加更详细的信息
+                        // 如果Yes LLM 异常，Add更详细的信息
                         if (exception is com.shijing.xomniclaw.providers.LLMException) {
-                            append("**类型**: API 调用失败\n")
-                            append("**建议**: 请检查模型配置和 API key\n\n")
+                            append("**类型**: API 调用failed\n")
+                            append("**建议**: Please check model configuration and API key\n\n")
                         }
 
-                        // 添加堆栈跟踪 (前500字符)
+                        // Add堆栈跟踪 (前500字符)
                         append("**堆栈跟踪**:\n```\n")
                         append(exception.stackTraceToString().take(500))
                         append("\n```")
                     }
                 }
 
-                // 广播错误消息到聊天界面
+                // 广播Error消息到聊天界面
                 try {
                     com.shijing.xomniclaw.gateway.GatewayServer.broadcastChatMessage(
                         effectiveSessionId, "assistant", errorMessage
@@ -727,7 +727,7 @@ object MainEntryNew {
                     Log.e(TAG, "Failed to broadcast error message", e)
                 }
 
-                // 保存错误到 session
+                // SaveError到 session
                 try {
                     session.addMessage(com.shijing.xomniclaw.providers.LegacyMessage(
                         role = "assistant",
@@ -755,9 +755,9 @@ object MainEntryNew {
                     bringMainUiToFrontAndNotify(
                         sessionId = effectiveSessionId,
                         notice = if (cancelledByUser) {
-                            "🛑 当前任务已停止，已返回主界面。"
+                            "🛑 CurrentTask已停止，已Back主界面。"
                         } else {
-                            "⚠️ 任务执行异常，已返回主界面，请查看对话详情。"
+                            "⚠️ Task执行异常，已Back主界面，请查看Chat详情。"
                         }
                     )
                 }
@@ -816,12 +816,12 @@ object MainEntryNew {
         existingPackageName: String? = null,
         onSummaryFinished: (() -> Job)? = null
     ) {
-        // 确保已初始化
+        // 确保Initialized
         if (!::agentLoop.isInitialized) {
             initialize(application)
         }
 
-        // 重置状态
+        // 重置Status
         _summaryFinished.value = false
 
         if (TextUtils.isEmpty(user)) {
@@ -831,11 +831,11 @@ object MainEntryNew {
         // 先回到桌面
         safePressHome()
 
-        // 创建新任务
+        // 创建新Task
         val newTaskId = generateTaskId()
         taskDataManager.startNewTask(newTaskId, existingPackageName ?: "")
         currentTaskId = newTaskId
-        Log.d(TAG, "========== 新测试任务: $newTaskId ==========")
+        Log.d(TAG, "========== 新测试Task: $newTaskId ==========")
 
         // Read mode from xomniclaw.json instead of MMKV
         val openClawConfig = configLoader.loadOmniClawConfig()
@@ -865,7 +865,7 @@ object MainEntryNew {
                     SessionFloatWindow.setAgentRunning(true, application)
                     SessionFloatWindow.updateSessionInfo(
                         title = "Agent 启动中",
-                        content = "任务: ${userInput.take(60)}"
+                        content = "Task: ${userInput.take(60)}"
                     )
 
                     Log.d(TAG, "💬 Step 1: Building system prompt...")
@@ -921,13 +921,13 @@ object MainEntryNew {
                         )
                     }
 
-                    // 测试任务也使用真实完成态来收起步骤悬浮窗。
+                    // 测试Task也使用真实Completed态来收起StepOverlay。
                     SessionFloatWindow.finishTask()
 
                     _summaryFinished.value = true
                     onSummaryFinished?.invoke()
 
-                    Log.d(TAG, "测试任务执行完成")
+                    Log.d(TAG, "测试TaskExecution completed")
                 } finally {
                     progressJob?.cancel()
                     WakeLockManager.releaseScreenWakeLock()
@@ -936,7 +936,7 @@ object MainEntryNew {
                 }
             },
             { error ->
-                Log.e(TAG, "测试任务执行失败", error)
+                Log.e(TAG, "测试Task执行failed", error)
                 LayoutExceptionLogger.log("MainEntryNew#run", error)
 
                 SessionFloatWindow.finishTask()
@@ -981,7 +981,7 @@ object MainEntryNew {
                 logd("========== Iteration ${update.number} ==========")
                 sessionUiContext?.currentStepIndex?.set(update.number.toLong())
                 SessionFloatWindow.updateSessionInfo(
-                    title = "🤖 步骤 ${update.number}/$agentMaxIterations",
+                    title = "🤖 Step ${update.number}/$agentMaxIterations",
                     content = "正在思考..."
                 )
             }
@@ -990,7 +990,7 @@ object MainEntryNew {
                 logd("💭 Thinking: 正在处理第 ${update.iteration} 步...")
                 sessionUiContext?.currentStepIndex?.set(update.iteration.toLong())
                 SessionFloatWindow.updateSessionInfo(
-                    title = "🤖 步骤 ${update.iteration}/$agentMaxIterations",
+                    title = "🤖 Step ${update.iteration}/$agentMaxIterations",
                     content = "正在思考..."
                 )
             }
@@ -1005,10 +1005,10 @@ object MainEntryNew {
                         append(update.content)
                     }
                     SessionFloatWindow.updateSessionInfo(
-                        title = "思考完成（$stepTag）",
+                        title = "Thinking completed（$stepTag）",
                         content = indexedReasoning.take(100) + if (indexedReasoning.length > 100) "..." else ""
                     )
-                    // 落盘到 Agent JSONL，冷启动后 sync 才能恢复主对话中的「思考过程」
+                    // 落盘到 Agent JSONL，冷启动后 sync 才能恢复主Chat中的「思考过程」
                     try {
                         val s = sessionManager.getOrCreate(ctx.sessionId)
                         ensureUserMessagePersisted(s, ctx)
@@ -1031,7 +1031,7 @@ object MainEntryNew {
                 }
                 if (sessionUiContext == null) {
                     SessionFloatWindow.updateSessionInfo(
-                        title = "思考完成",
+                        title = "Thinking completed",
                         content = update.content.take(100) + if (update.content.length > 100) "..." else ""
                     )
                 }
@@ -1060,18 +1060,18 @@ object MainEntryNew {
             is ProgressUpdate.ToolResult -> {
                 logd("✅ Result: ${update.result.take(100)}, ${update.execDuration}ms")
                 SessionFloatWindow.updateSessionInfo(
-                    title = "执行完成",
+                    title = "Execution completed",
                     content = update.result.take(100) + if (update.result.length > 100) "..." else ""
                 )
                 sessionUiContext?.let {
-                    emitProgressToUi(it, "tool_result", "执行完成", update.result)
+                    emitProgressToUi(it, "tool_result", "Execution completed", update.result)
                 }
             }
 
             is ProgressUpdate.IterationComplete -> {
                 logd("🏁 Iteration ${update.number} complete: total=${update.iterationDuration}ms, llm=${update.llmDuration}ms, exec=${update.execDuration}ms")
                 SessionFloatWindow.updateSessionInfo(
-                    title = "✅ 步骤 ${update.number}/$agentMaxIterations 完成",
+                    title = "✅ Step ${update.number}/$agentMaxIterations Completed",
                     content = "耗时: ${update.iterationDuration / 1000}s"
                 )
             }
@@ -1079,7 +1079,7 @@ object MainEntryNew {
             is ProgressUpdate.ContextOverflow -> {
                 logw("🔄 Context overflow: ${update.message}")
                 SessionFloatWindow.updateSessionInfo(
-                    title = "上下文超限",
+                    title = "Context exceeded",
                     content = update.message
                 )
             }
@@ -1087,8 +1087,8 @@ object MainEntryNew {
             is ProgressUpdate.ContextRecovered -> {
                 logd("✅ Context recovered: ${update.strategy} (attempt ${update.attempt})")
                 SessionFloatWindow.updateSessionInfo(
-                    title = "上下文已恢复",
-                    content = "策略: ${update.strategy}"
+                    title = "Context restored",
+                    content = "Policy: ${update.strategy}"
                 )
             }
 
@@ -1102,7 +1102,7 @@ object MainEntryNew {
             }
 
             is ProgressUpdate.LlmUsage -> {
-                // 实时累计 token：有 session 上下文则记到该会话，否则归到测试入口。
+                // 实时累计 token：有 session 上下文则记到该会话，No则归到测试entry。
                 val targetSessionId = sessionUiContext?.sessionId ?: "test_run"
                 accumulateTokenUsage(targetSessionId, update.usage)
             }
@@ -1110,23 +1110,23 @@ object MainEntryNew {
             is ProgressUpdate.Error -> {
                 loge("❌ Error: ${update.message}")
                 SessionFloatWindow.updateSessionInfo(
-                    title = "错误",
+                    title = "Error",
                     content = update.message.take(100)
                 )
                 sessionUiContext?.let {
-                    emitProgressToUi(it, "error", "错误", update.message)
+                    emitProgressToUi(it, "error", "Error", update.message)
                 }
             }
 
             is ProgressUpdate.BlockReply -> {
                 logd("📤 Block reply: ${update.text.take(200)}")
                 SessionFloatWindow.updateSessionInfo(
-                    title = "中间回复",
+                    title = "Intermediate reply",
                     content = update.text.take(100) + if (update.text.length > 100) "..." else ""
                 )
                 sessionUiContext?.let {
-                    emitProgressToUi(it, "block_reply", "中间回复", update.text)
-                    // 中间回复需要绑定到本次 run 的 session，不能再走全局 activeSessionId。
+                    emitProgressToUi(it, "block_reply", "Intermediate reply", update.text)
+                    // Intermediate reply需要绑定到本次 run 的 session，不能再走全局 activeSessionId。
                     it.lastBlockReplyText.set(update.text)
                     com.shijing.xomniclaw.gateway.GatewayServer.broadcastChatMessage(
                         it.sessionId, "assistant", update.text
@@ -1137,7 +1137,7 @@ object MainEntryNew {
     }
 
     /**
-     * 确保本轮用户输入已写入会话，避免 thinking 抢先入库导致“思考在用户前”。
+     * 确保本turnsUser输入已写入会话，避免 thinking 抢先入库导致“思考在User前”。
      */
     private fun ensureUserMessagePersisted(
         session: com.shijing.xomniclaw.agent.session.Session,
@@ -1196,7 +1196,7 @@ object MainEntryNew {
             agentLoop.stop()
         }
 
-        // 用户手动停止 → 隐藏浮动窗口
+        // User手动停止 → 隐藏浮动窗口
         if (::application.isInitialized) {
             SessionFloatWindow.setAgentRunning(false, application)
         }
@@ -1241,7 +1241,7 @@ object MainEntryNew {
     }
 
     /**
-     * 停止所有仍在执行的会话任务（红色停止按钮走这里，避免 runningSessionIds 漏记导致停不掉）。
+     * 停止所有仍在执行的会话Task（红色停止按钮走这里，避免 runningSessionIds 漏记导致停不掉）。
      */
     fun cancelAllSessionJobs() {
         val ids = (activeSessionJobs.keys + activeSessionLoops.keys + activeSessionRunTokens.keys).toSet()
@@ -1256,7 +1256,7 @@ object MainEntryNew {
     }
 
     /**
-     * 仅提取本轮新增消息，避免把历史上下文重复落盘。
+     * 仅提取本turns新增消息，避免把历史上下文重复落盘。
      *
      * 兼容两种情况：
      * 1) resultMessages 以 contextHistory 为前缀 -> 直接 drop(history.size)
@@ -1264,7 +1264,7 @@ object MainEntryNew {
      *
      * 注意：Python 侧 [messages] 始终以 **system** 开头，而 Kotlin 传入的 contextHistory **不含**
      * system。旧实现用 resultMessages[0]==system 与 contextHistory[0]==user 比对，前缀长度恒为 0，
-     * 进而 drop(0)==整段回放，会话里会像「把上一轮历史又追加一遍」（OpenRouter/Gemma 等更易触发）。
+     * 进而 drop(0)==整段回放，会话里会像「把上一turns历史又追加一遍」（OpenRouter/Gemma 等更易触发）。
      */
     private fun extractRunDeltaMessages(
         contextHistory: List<com.shijing.xomniclaw.providers.llm.Message>,
@@ -1272,11 +1272,11 @@ object MainEntryNew {
         currentUserInput: String
     ): List<com.shijing.xomniclaw.providers.llm.Message> {
         if (resultMessages.isEmpty()) return emptyList()
-        // 与发给 Python 的对话数组对齐：去掉仅存在于完整 payload 里的首条 system。
+        // 与发给 Python 的Chat数组对齐：去掉仅存在于完整 payload 里的首条 system。
         val resultTail = resultMessages.dropWhile { it.role == "system" }
         if (contextHistory.isEmpty()) return resultTail
 
-        // 优先按「本轮用户句」锚定：取最后一次与当前输入一致的用户消息之后的增量（含本条 user 之后的所有轮次）。
+        // 优先按「本turnsUser句」锚定：取最后一次与Current输入一致的User消息之后的增量（含本条 user 之后的所有turns次）。
         val currentAnchor = normalizeUserInputAnchor(currentUserInput)
         if (currentAnchor.isNotEmpty()) {
             val lastUserIdx = resultTail.indexOfLast { msg ->
@@ -1302,13 +1302,13 @@ object MainEntryNew {
             Log.w(
                 TAG,
                 "extractRunDeltaMessages: 前缀仍为 0（history=${contextHistory.size}, tail=${resultTail.size}），" +
-                    "可能造成重复落盘；请检查 provider 是否改写了历史句内容。"
+                    "可能造成重复落盘；请检查 provider YesNo改写了历史句内容。"
             )
         }
         return resultTail.drop(samePrefixCount)
     }
 
-    /** 用户句锚点归一化：NFKC + trim，减轻 Gemma/OpenRouter 与输入法间 Unicode 差异导致的锚定失败 */
+    /** User句锚点归一化：NFKC + trim，减轻 Gemma/OpenRouter 与输入法间 Unicode 差异导致的锚定failed */
     private fun normalizeUserInputAnchor(raw: String): String {
         return Normalizer.normalize(raw.trim(), Normalizer.Form.NFKC)
     }
@@ -1354,8 +1354,8 @@ object MainEntryNew {
     )
 
     /**
-     * 构造低 token 的“状态变化轨迹”上下文：
-     * - Summary Memory：已完成子目标摘要
+     * 构造低 token 的“Status变化轨迹”上下文：
+     * - Summary Memory：Completed子目标摘要
      * - Short-term Trajectory：最近 3~5 步 I/A/E/O
      * - Self-check Guidance：避免重复 snapshot / 重复动作
      */
@@ -1421,7 +1421,7 @@ object MainEntryNew {
             .take(3)
 
         val summaryLines = if (summaryMemory.isEmpty()) {
-            listOf("任务目标：${userGoal.take(60)}")
+            listOf("Task目标：${userGoal.take(60)}")
         } else {
             summaryMemory.map { "已执行：$it" }
         }
@@ -1447,26 +1447,26 @@ object MainEntryNew {
     private fun inferIntentFromToolName(toolName: String, userGoal: String): String {
         val lower = toolName.lowercase()
         return when {
-            lower.contains("open") || lower.contains("launch") -> "打开目标应用并进入可操作页面"
+            lower.contains("open") || lower.contains("launch") -> "Open目标应用并Enter可操作页面"
             lower.contains("tap") || lower.contains("click") -> "定位并触发页面元素"
             lower.contains("input") || lower.contains("type") -> "输入查询词或表单内容"
             lower.contains("swipe") || lower.contains("scroll") -> "浏览页面并发现目标区域"
-            lower.contains("back") -> "返回上一层并重新定位流程"
-            lower.contains("snapshot") || lower.contains("screenshot") || lower == "device" -> "观察当前页面状态以判断下一步"
-            else -> "推进用户目标：${userGoal.take(40)}"
+            lower.contains("back") -> "Back上一层并重新定位流程"
+            lower.contains("snapshot") || lower.contains("screenshot") || lower == "device" -> "观察Current页面Status以判断下一步"
+            else -> "推进User目标：${userGoal.take(40)}"
         }
     }
 
     private fun inferExpectationFromToolName(toolName: String): String {
         val lower = toolName.lowercase()
         return when {
-            lower.contains("open") || lower.contains("launch") -> "看到目标应用首页或搜索入口"
-            lower.contains("tap") || lower.contains("click") -> "页面发生可见变化或进入下一层"
+            lower.contains("open") || lower.contains("launch") -> "看到目标应用首页或搜索entry"
+            lower.contains("tap") || lower.contains("click") -> "页面发生可见变化或Enter下一层"
             lower.contains("input") || lower.contains("type") -> "输入框内容更新并可继续提交"
             lower.contains("swipe") || lower.contains("scroll") -> "可见区域变化，出现新候选信息"
-            lower.contains("back") -> "返回上一页并出现预期导航层级"
+            lower.contains("back") -> "Back上一页并出现预期导航层级"
             lower.contains("snapshot") || lower.contains("screenshot") || lower == "device" -> "获得可判断下一步的页面证据"
-            else -> "得到推进任务的可验证反馈"
+            else -> "得到推进Task的可验证反馈"
         }
     }
 
