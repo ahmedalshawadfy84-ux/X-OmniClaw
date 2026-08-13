@@ -37,7 +37,7 @@
                     android:layout_height="wrap_content"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    android:text="按住说话"
+                    android:text="Hold to talk"
                     android:textColor="#FFFFFFFF"
                     android:textSize="12sp"
                     android:textStyle="bold" />
@@ -60,7 +60,7 @@
                 android:layout_height="40dp"
                 android:layout_marginEnd="8dp"
                 android:background="@android:color/transparent"
-                android:contentDescription="按住语音"
+                android:contentDescription="Hold for voice"
                 android:minWidth="40dp"
                 android:minHeight="40dp"
                 android:padding="8dp"
@@ -73,7 +73,7 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:background="@android:color/transparent"
-                android:contentDescription="停止替身"
+                android:contentDescription="Stop companion"
                 android:minWidth="40dp"
                 android:minHeight="40dp"
                 android:padding="8dp"
@@ -82,7 +82,7 @@
                 android:src="@android:drawable/ic_menu_close_clear_cancel" />
         </LinearLayout>
 
-        <!-- 右下角拖拽以调整浮窗大小（与拖动手势分离，逻辑见 ScreenCompanionFloatWindow） -->
+        <!-- 右下角拖拽以调整浮窗Size（与拖动手势分离，逻辑见 ScreenCompanionFloatWindow） -->
         <com.shijing.xomniclaw.ui.floatwindow.CompanionResizeHandleView
             android:id="@+id/view_companion_resize_handle"
             android:layout_width="42dp"
