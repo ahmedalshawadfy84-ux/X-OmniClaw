@@ -26,8 +26,8 @@ import com.shijing.xomniclaw.config.ConfigLoader
 import kotlinx.coroutines.launch
 
 /**
- * 飞书 Channel 配置页面
- * 对齐 clawdbot-feishu 配置项
+ * Feishu Channel Settings页面
+ * 对齐 clawdbot-feishu Settings项
  */
 class FeishuChannelActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,11 +55,11 @@ fun FeishuChannelScreen(onBack: () -> Unit, context: android.content.Context = a
     val scope = rememberCoroutineScope()
     val configLoader = remember { ConfigLoader(context) }
 
-    // 加载配置
+    // 加载Settings
     val openClawConfig = remember { configLoader.loadOmniClawConfig() }
     val savedConfig = remember { openClawConfig.channels.feishu }
 
-    // 状态变量（对齐 clawdbot-feishu 配置）
+    // Status变量（对齐 clawdbot-feishu Settings）
     var enabled by remember { mutableStateOf(savedConfig.enabled) }
     var appId by remember { mutableStateOf(savedConfig.appId) }
     var appSecret by remember { mutableStateOf(savedConfig.appSecret) }
@@ -76,17 +76,17 @@ fun FeishuChannelScreen(onBack: () -> Unit, context: android.content.Context = a
                 title = { Text("Feishu Channel") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, "返回")
+                        Icon(Icons.Filled.ArrowBack, "Back")
                     }
                 },
                 actions = {
                     TextButton(
                         onClick = {
                             scope.launch {
-                                // 读取当前完整配置
+                                // 读取Current完整Settings
                                 val currentConfig = configLoader.loadOmniClawConfig()
 
-                                // 更新 feishu 配置
+                                // 更新 feishu Settings
                                 val updatedFeishuConfig = currentConfig.channels.feishu.copy(
                                     enabled = enabled,
                                     appId = appId,
@@ -100,7 +100,7 @@ fun FeishuChannelScreen(onBack: () -> Unit, context: android.content.Context = a
                                     dmHistoryLimit = currentConfig.channels.feishu.dmHistoryLimit
                                 )
 
-                                // 更新完整配置
+                                // 更新完整Settings
                                 val updatedChannelsConfig = currentConfig.channels.copy(
                                     feishu = updatedFeishuConfig
                                 )
@@ -108,14 +108,14 @@ fun FeishuChannelScreen(onBack: () -> Unit, context: android.content.Context = a
                                     channels = updatedChannelsConfig
                                 )
 
-                                // 保存到 xomniclaw.json
+                                // Saved to xomniclaw.json
                                 configLoader.saveOmniClawConfig(updatedConfig)
 
                                 showSaveSuccess = true
                             }
                         }
                     ) {
-                        Text("保存")
+                        Text("Save")
                     }
                 }
             )
@@ -129,7 +129,7 @@ fun FeishuChannelScreen(onBack: () -> Unit, context: android.content.Context = a
                 Snackbar(
                     modifier = Modifier.padding(16.dp)
                 ) {
-                    Text("配置已保存")
+                    Text("Settings saved")
                 }
             }
         }
@@ -153,11 +153,11 @@ fun FeishuChannelScreen(onBack: () -> Unit, context: android.content.Context = a
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "启用 Feishu Channel",
+                            text = "Enable Feishu Channel",
                             style = MaterialTheme.typography.titleMedium
                         )
                         Text(
-                            text = "开启后将接收飞书消息",
+                            text = "When enabled, Feishu messages will be received",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -169,9 +169,9 @@ fun FeishuChannelScreen(onBack: () -> Unit, context: android.content.Context = a
                 }
             }
 
-            // 基础配置
+            // Basic configuration
             Text(
-                text = "基础配置",
+                text = "Basic configuration",
                 style = MaterialTheme.typography.titleLarge
             )
 
@@ -188,14 +188,14 @@ fun FeishuChannelScreen(onBack: () -> Unit, context: android.content.Context = a
                 value = appSecret,
                 onValueChange = { appSecret = it },
                 label = { Text("App Secret") },
-                placeholder = { Text("输入 App Secret") },
+                placeholder = { Text("Enter App Secret") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
 
-            // DM 策略
+            // DM Policy
             Text(
-                text = "私聊策略 (DM Policy)",
+                text = "DM Policy (DM Policy)",
                 style = MaterialTheme.typography.titleMedium
             )
 
@@ -209,10 +209,10 @@ fun FeishuChannelScreen(onBack: () -> Unit, context: android.content.Context = a
                                 Text(policy.replaceFirstChar { it.uppercase() })
                                 Text(
                                     text = when (policy) {
-                                        "open" -> "接受所有私聊"
-                                        "pairing" -> "需要配对后才能使用"
-                                        "allowlist" -> "仅白名单用户"
-                                        else -> "其他策略"
+                                        "open" -> "Accept all DMs"
+                                        "pairing" -> "Requires pairing before use"
+                                        "allowlist" -> "Whitelisted users only"
+                                        else -> "Other policy"
                                     },
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -224,9 +224,9 @@ fun FeishuChannelScreen(onBack: () -> Unit, context: android.content.Context = a
                 }
             }
 
-            // 群聊策略
+            // Group Policy
             Text(
-                text = "群聊策略 (Group Policy)",
+                text = "Group Policy (Group Policy)",
                 style = MaterialTheme.typography.titleMedium
             )
 
@@ -240,9 +240,9 @@ fun FeishuChannelScreen(onBack: () -> Unit, context: android.content.Context = a
                                 Text(policy.replaceFirstChar { it.uppercase() })
                                 Text(
                                     text = when (policy) {
-                                        "open" -> "接受所有群聊"
-                                        "allowlist" -> "仅白名单群聊"
-                                        "disabled" -> "禁用群聊"
+                                        "open" -> "Accept all group chats"
+                                        "allowlist" -> "Whitelisted group chats only"
+                                        "disabled" -> "Disable group chats"
                                         else -> ""
                                     },
                                     style = MaterialTheme.typography.bodySmall,
@@ -255,13 +255,13 @@ fun FeishuChannelScreen(onBack: () -> Unit, context: android.content.Context = a
                 }
             }
 
-            // 群聊白名单
+            // Group chat allowlist
             if (groupPolicy == "allowlist") {
                 OutlinedTextField(
                     value = groupAllowFrom,
                     onValueChange = { groupAllowFrom = it },
-                    label = { Text("群聊白名单") },
-                    placeholder = { Text("每行一个群聊ID\noc_xxxxxx") },
+                    label = { Text("Group chat allowlist") },
+                    placeholder = { Text("One group chat ID per line\noc_xxxxxx") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(120.dp),
@@ -280,11 +280,11 @@ fun FeishuChannelScreen(onBack: () -> Unit, context: android.content.Context = a
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "群聊需要 @ 提及",
+                            text = "Group chat requires @mention",
                             style = MaterialTheme.typography.titleMedium
                         )
                         Text(
-                            text = "开启后仅响应 @ 机器人的消息",
+                            text = "When enabled, only messages that @mention the bot are processed",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -296,9 +296,9 @@ fun FeishuChannelScreen(onBack: () -> Unit, context: android.content.Context = a
                 }
             }
 
-            // 配置文件路径提示
+            // Settings文件Path提示
             Text(
-                text = "配置保存在:\n/sdcard/.xomniclaw/xomniclaw.json (channels.feishu)",
+                text = "Configuration is saved in:\n/sdcard/.xomniclaw/xomniclaw.json (channels.feishu)",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(vertical = 8.dp)
