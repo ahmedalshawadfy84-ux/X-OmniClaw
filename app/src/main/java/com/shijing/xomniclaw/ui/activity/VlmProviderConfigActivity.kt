@@ -12,12 +12,12 @@ import com.shijing.xomniclaw.config.VisionConfig
 import com.shijing.xomniclaw.databinding.ActivityVlmProviderConfigBinding
 
 /**
- * VLM Provider 独立配置页（与 Agent 模型 provider 平行）。
+ * VLM Provider 独立Settings页（与 Agent 模型 provider 平行）。
  */
 class VlmProviderConfigActivity : AppCompatActivity() {
     companion object {
         private const val VLM_PROVIDER_ID = "vlm"
-        /** 与内置 `xomniclaw.json.default.txt` 中 vlm.baseUrl 对齐 */
+        /** 与Built-in `xomniclaw.json.default.txt` 中 vlm.baseUrl 对齐 */
         private const val DEFAULT_VLM_BASE_URL = "https://mimimax.cn/v1"
         private const val DEFAULT_VLM_MODEL = "MiniMax-M2.7-highspeed"
     }
@@ -47,7 +47,7 @@ class VlmProviderConfigActivity : AppCompatActivity() {
         binding.switchFollowAgent.isChecked = followAgent
         binding.etVlmModelRef.setText(if (modelId.isBlank()) "" else "vlm/$modelId")
         binding.etVlmUrl.setText(provider?.baseUrl.orEmpty())
-        // 独立 VLM 的 apiKey；加载失败时保持为空（保存时再解析默认继承）
+        // 独立 VLM 的 apiKey；Load failed时保持为空（Save时再解析默认继承）
         binding.etVlmApiKey.setText(provider?.apiKey.orEmpty())
         applyFollowAgentUi(followAgent)
     }
@@ -61,14 +61,14 @@ class VlmProviderConfigActivity : AppCompatActivity() {
     }
 
     /**
-     * 跟随 Agent 时隐藏手动字段，避免误配置。
+     * Follow Agent 时隐藏手动字段，避免误Settings。
      */
     private fun applyFollowAgentUi(followAgent: Boolean) {
         binding.layoutManual.visibility = if (followAgent) android.view.View.GONE else android.view.View.VISIBLE
         binding.tvFollowHint.text = if (followAgent) {
-            "已启用：VLM 将复用 Agent provider/model。"
+            "Enabled: VLM will reuse the Agent provider/model."
         } else {
-            "已启用独立 VLM：请填写独立 provider/model 或其他参数。"
+            "Independent VLM enabled: enter the independent provider/model or other parameters."
         }
     }
 
@@ -84,13 +84,13 @@ class VlmProviderConfigActivity : AppCompatActivity() {
             if (followAgent) {
                 val synced = buildVlmProviderFromAgent(config, providers)
                 if (synced == null) {
-                    Toast.makeText(this, "保存失败：无法解析 Agent 当前模型配置", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "Save failed: unable to resolve the current Agent model configuration", Toast.LENGTH_LONG).show()
                     return
                 }
                 providers[VLM_PROVIDER_ID] = synced
             } else {
                 val existing = providers[VLM_PROVIDER_ID]
-                // 用户显式填写优先；留空则继承已有 vlm 或主推理线路 mimimax（与默认捆绑示例一致）
+                // User显式填写优先；留空则继承已有 vlm 或主Reasoning线路 mimimax（与默认捆绑示例一致）
                 val fallbackKey = existing?.apiKey ?: config.resolveProviders()["mimimax"]?.apiKey
                 val resolvedApiKey = apiKeyInput.ifBlank { fallbackKey }
                 val rawBaseUrl = if (urlInput.isBlank()) existing?.baseUrl ?: DEFAULT_VLM_BASE_URL else urlInput
@@ -100,19 +100,19 @@ class VlmProviderConfigActivity : AppCompatActivity() {
                     previousApi = existing?.api
                 )
                 val defaultModelId = if (resolvedApi == ModelApi.MINIMAX_IMAGES_UNDERSTAND) {
-                    // mimimax 默认模型按用户要求使用聊天高速度模型；
-                    // 真正请求 /images/understand 时会在 ApiAdapter 层自动改写为 minimax/vision。
+                    // mimimax Default model按User要求使用聊天高速度模型；
+                    // 真正请求 /images/understand 时会在 ApiAdapter 层Auto改写为 minimax/vision。
                     "MiniMax-M2.7-highspeed"
                 } else {
                     DEFAULT_VLM_MODEL
                 }
-                // 单一模型 ID：与运行时 DualTrack / LocalVoiceVisionHub 使用的 models[0].id 一致。
+                // 单一Model ID：与运行时 DualTrack / LocalVoiceVisionHub 使用的 models[0].id 一致。
                 val rawModel = when {
                     modelRefInput.contains("/") -> modelRefInput.substringAfter("/")
                     modelRefInput.isNotBlank() -> modelRefInput
                     else -> existing?.models?.firstOrNull()?.id ?: defaultModelId
                 }
-                // 仅在候选模型为空时兜底默认模型，避免覆盖用户显式选择的 mimimax 默认模型。
+                // 仅在候选模型为空时兜底Default model，避免覆盖User显式选择的 mimimax Default model。
                 val normalizedModelId = rawModel.ifBlank { defaultModelId }.let { candidate ->
                     candidate
                 }
@@ -145,18 +145,18 @@ class VlmProviderConfigActivity : AppCompatActivity() {
                 )
             )
             if (!saved) {
-                Toast.makeText(this, "保存失败：配置文件写入失败", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Save failed: failed to write settings file", Toast.LENGTH_LONG).show()
                 return
             }
-            Toast.makeText(this, "VLM Provider 已保存", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "VLM Provider saved", Toast.LENGTH_SHORT).show()
             finish()
         } catch (e: Exception) {
-            Toast.makeText(this, "保存失败: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Save failed: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
     /**
-     * “跟随 Agent”开关单独实时落盘，避免用户只切换开关时 json 未及时更新。
+     * “Follow Agent”开关单独实时落盘，避免User只切换开关时 json 未及时更新。
      */
     private fun persistFollowAgentFlag(followAgent: Boolean) {
         runCatching {
@@ -176,15 +176,15 @@ class VlmProviderConfigActivity : AppCompatActivity() {
             )
             val saved = configLoader.saveOmniClawConfig(updated)
             if (!saved) {
-                Toast.makeText(this, "跟随开关保存失败：配置写入失败", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Follow toggle save failed: failed to write settings", Toast.LENGTH_LONG).show()
             }
         }.onFailure { e ->
-            Toast.makeText(this, "跟随开关保存失败: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "跟随开关Save failed: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
     /**
-     * 将 VLM provider 同步到 Agent 当前主模型对应的 provider/model 配置。
+     * 将 VLM provider 同步到 Agent Current主模型对应的 provider/model Settings。
      * 目标：勾选“与 Agent 一致”后，json 中 models.providers.vlm 立即可见且与 Agent 对齐。
      */
     private fun buildVlmProviderFromAgent(
@@ -228,10 +228,10 @@ class VlmProviderConfigActivity : AppCompatActivity() {
     }
 
     /**
-     * VLM API 类型自动推断：
+     * VLM API typeAuto推断：
      * - mimimax.cn => minimax-images-understand（走 /v1/images/understand）
      * - Ollama /api/chat => ollama
-     * - 其余默认 OpenAI 兼容；若历史配置里已是有效 api 则保留
+     * - 其余默认 OpenAI 兼容；若历史Settings里已Yes有效 api 则保留
      */
     private fun inferVlmApi(baseUrl: String, previousApi: String?): String {
         val normalized = baseUrl.trim().lowercase()
@@ -249,7 +249,7 @@ class VlmProviderConfigActivity : AppCompatActivity() {
     }
 
     /**
-     * mimimax.cn 统一归一到 /v1 根路径，后续由 API 路由补到 /images/understand。
+     * mimimax.cn 统一归一到 /v1 根Path，后续由 API 路由补到 /images/understand。
      */
     private fun normalizeMimimaxBaseUrl(baseUrl: String): String {
         val trimmed = baseUrl.trim().trimEnd('/')
