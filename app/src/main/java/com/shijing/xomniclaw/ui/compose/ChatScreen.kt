@@ -98,7 +98,7 @@ data class ChatMessage(
 )
 
 /**
- * 顶部“执行中任务”状态条使用的数据模型。
+ * 顶部“执行中Task”Status条使用的数据模型。
  */
 data class RunningTaskStatus(
     val sessionId: String,
@@ -131,7 +131,7 @@ private val ChatSidebarBg = Color(0xFFF3F4F6)
 private val ChatSurface = Color(0xFFFFFFFF)
 private val ChatDivider = Color(0xFFE5E7EB)
 
-/** 以横向条展示的「工具/思考」类时间线，与普通气泡区分 */
+/** 以横向条展示的「Tools/思考」类时间线，与普通气泡区分 */
 private val TimelineBarKinds = setOf(
     ChatMessageKind.TOOL_CALL,
     ChatMessageKind.TOOL_RESULT,
@@ -139,19 +139,19 @@ private val TimelineBarKinds = setOf(
     ChatMessageKind.BLOCK_REPLY,
     ChatMessageKind.ERROR
 )
-/** 主界面不展示的消息类型：工具调用与工具结果。 */
+/** 主界面不展示的消息类型：Tools调用与Tools结果。 */
 private val HiddenInMainTimelineKinds = setOf(
     ChatMessageKind.TOOL_CALL,
     ChatMessageKind.TOOL_RESULT
 )
-/** 需要聚合进“执行轨迹大卡片”的消息类型。 */
+/** 需要聚合进“执行轨迹大card”的消息类型。 */
 private val GroupedTimelineKinds = setOf(
     ChatMessageKind.THINKING,
     ChatMessageKind.BLOCK_REPLY,
     ChatMessageKind.ERROR
 )
 
-/** 对话列表渲染模型：普通消息 + 一轮执行轨迹卡片。 */
+/** Chat列表渲染模型：普通消息 + 一turns执行轨迹card。 */
 private sealed interface ConversationRenderItem {
     val key: String
 
@@ -177,7 +177,7 @@ private sealed interface ConversationRenderItem {
 }
 
 /**
- * 把同一轮（由用户消息触发）的思考/中间回复/错误聚合成一个大卡片，帮助用户理解步骤关系。
+ * 把同一turns（由User消息触发）的思考/Intermediate reply/Error聚合成一个大card，帮助User理解Step关系。
  */
 private fun buildConversationRenderItems(messages: List<ChatMessage>): List<ConversationRenderItem> {
     if (messages.isEmpty()) return emptyList()
@@ -246,20 +246,20 @@ fun ChatScreen(
     cameraPreviewContent: (@Composable () -> Unit)? = null
 ) {
     var inputText by remember { mutableStateOf("") }
-    // 顶部会话下拉框展开态：用下拉替代左侧固定栏，给主对话更多空间。
+    // 顶部会话下拉框Expand态：用下拉替代左侧固定栏，给主Chat更多空间。
     var sessionMenuExpanded by remember { mutableStateOf(false) }
     var pendingDeleteSession by remember { mutableStateOf<SessionManager.Session?>(null) }
     val sortedSessions = remember(sessions) { sessions.sortedByDescending { it.createdAt } }
-    val currentSessionTitle = currentSession?.title?.takeIf { it.isNotBlank() } ?: "选择会话"
-    // 仅用于主对话展示：隐藏工具调用/工具结果，避免界面被技术细节刷屏。
+    val currentSessionTitle = currentSession?.title?.takeIf { it.isNotBlank() } ?: "Select session"
+    // 仅用于主Chat展示：隐藏Tools调用/Tools结果，避免界面被技术细节刷屏。
     val visibleMessages = remember(messages) {
         messages.filterNot { it.kind in HiddenInMainTimelineKinds }
     }
-    // 将同轮 Agent 执行步骤聚合，减少刷屏并强化轮次关系。
+    // 将同turns Agent 执行Step聚合，减少刷屏并强化turns次关系。
     val renderItems = remember(visibleMessages) {
         buildConversationRenderItems(visibleMessages)
     }
-    // 统一维护每个“执行轨迹卡片”的展开态，避免 LazyColumn 复用时局部 remember 状态错位。
+    // 统一维护每个“执行轨迹card”的Expand态，避免 LazyColumn 复用时局部 remember Status错位。
     val traceCardExpandedStates = remember { mutableStateMapOf<String, Boolean>() }
     var lastCameraPreviewVisible by remember { mutableStateOf(showCameraPreview) }
     val listState = rememberLazyListState()
@@ -286,8 +286,8 @@ fun ChatScreen(
     LaunchedEffect(showCameraPreview, isVoiceListening, isVoiceProcessing) {
         val cameraPreviewJustClosed = lastCameraPreviewVisible && !showCameraPreview
         if (cameraPreviewJustClosed && (isVoiceListening || isVoiceProcessing)) {
-            // 摄像头语音提问后关闭预览时，自动回到语音态，
-            // 让用户立刻看到“正在识别并等待回答”的反馈，而不是退回文本输入框。
+            // Camera语音提问后Close预览时，Auto回到语音态，
+            // 让User立刻看到“正在识别并等待回答”的反馈，而不Yes退回文本输入框。
             onVoiceModeChange(true)
         }
         lastCameraPreviewVisible = showCameraPreview
@@ -299,7 +299,7 @@ fun ChatScreen(
                 .fillMaxSize()
                 .background(ChatSurface)
         ) {
-            // 顶部：会话下拉 + 新对话/更新，替代左侧会话栏以释放主区空间。
+            // 顶部：会话下拉 + New Chat/更新，替代左侧会话栏以释放主区空间。
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -329,7 +329,7 @@ fun ChatScreen(
                         )
                         Icon(
                             imageVector = Icons.Default.ExpandMore,
-                            contentDescription = "选择会话",
+                            contentDescription = "Select session",
                             tint = Color(0xFF6B7280)
                         )
                     }
@@ -365,7 +365,7 @@ fun ChatScreen(
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Filled.Delete,
-                                                contentDescription = "删除会话",
+                                                contentDescription = "Delete session",
                                                 tint = Color(0xFFDC2626)
                                             )
                                         }
@@ -384,15 +384,15 @@ fun ChatScreen(
                 FilledTonalButton(onClick = onNewSession) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("新对话", maxLines = 1)
+                    Text("New Chat", maxLines = 1)
                 }
             }
 
             pendingDeleteSession?.let { session ->
                 AlertDialog(
                     onDismissRequest = { pendingDeleteSession = null },
-                    title = { Text("删除会话") },
-                    text = { Text("确认删除会话「${session.title}」吗？删除后将不可恢复。") },
+                    title = { Text("Delete session") },
+                    text = { Text("Confirm deleting session「${session.title}」吗？It cannot be restored after deletion.") },
                     confirmButton = {
                         TextButton(
                             onClick = {
@@ -400,12 +400,12 @@ fun ChatScreen(
                                 pendingDeleteSession = null
                             }
                         ) {
-                            Text("删除", color = Color(0xFFDC2626))
+                            Text("Delete", color = Color(0xFFDC2626))
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { pendingDeleteSession = null }) {
-                            Text("取消")
+                            Text("Cancel")
                         }
                     }
                 )
@@ -432,7 +432,7 @@ fun ChatScreen(
             }
 
             if (runningTasks.isNotEmpty()) {
-                // 全局执行中任务条：跨会话展示，并支持点击直接跳转到对应会话。
+                // 全局执行中Task条：跨会话展示，并支持点击直接跳转到对应会话。
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -442,7 +442,7 @@ fun ChatScreen(
                 ) {
                     Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
                         Text(
-                            text = "执行中任务（点击可跳转）",
+                            text = "执行中Task（点击可跳转）",
                             style = TextStyle(
                                 fontSize = 11.sp,
                                 color = Color(0xFF1E40AF),
@@ -469,7 +469,7 @@ fun ChatScreen(
             }
 
             if (permissionStatusInfo.isNotBlank()) {
-                // 主对话页实时权限状态条：放在会话记忆信息下方，方便随时观察。
+                // 主Chat页实时Permission Status条：放在会话记忆信息下方，方便随时观察。
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -490,7 +490,7 @@ fun ChatScreen(
             }
 
             if (currentModelInfo.isNotBlank()) {
-                // 显示当前主模型，便于用户确认实际使用的 provider/model。
+                // 显示Current主模型，便于User确认实际使用的 provider/model。
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -536,7 +536,7 @@ fun ChatScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "向 AI 助手发送消息来控制手机",
+                            text = "向 AI Assistant发送消息来控制手机",
                             style = TextStyle(fontSize = 14.sp, color = Color(0xFF6B7280))
                         )
                     }
@@ -572,7 +572,7 @@ fun ChatScreen(
 
             Divider(color = ChatDivider, thickness = 1.dp)
 
-            // Message input box (含摄像头按钮 + 发送/停止按钮)
+            // Message input box (含Camera按钮 + 发送/停止按钮)
             MessageComposer(
                 value = inputText,
                 onValueChange = { inputText = it },
@@ -595,7 +595,7 @@ fun ChatScreen(
             )
         }
 
-        // 摄像头预览覆盖层（条件显示）
+        // Camera预览覆盖层（条件显示）
         if (showCameraPreview && cameraPreviewContent != null) {
             cameraPreviewContent()
         }
@@ -603,10 +603,10 @@ fun ChatScreen(
 }
 
 // ============================================================================
-// 侧栏会话列表（CoPaw 风格）
+// 侧栏Session list（CoPaw 风格）
 // ============================================================================
 
-/** 侧栏收起后的窄条：点击箭头重新展开会话列表 */
+/** 侧栏收起后的窄条：点击箭头重新ExpandSession list */
 @Composable
 private fun CollapsedChatSidebarRail(
     onExpand: () -> Unit,
@@ -628,7 +628,7 @@ private fun CollapsedChatSidebarRail(
             IconButton(onClick = onExpand) {
                 Icon(
                     imageVector = Icons.Filled.KeyboardArrowRight,
-                    contentDescription = "展开会话列表",
+                    contentDescription = "ExpandSession list",
                     tint = ChatPurple
                 )
             }
@@ -667,7 +667,7 @@ private fun ChatSessionSidebar(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.KeyboardArrowLeft,
-                        contentDescription = "收起会话列表",
+                        contentDescription = "收起Session list",
                         tint = Color(0xFF6B7280)
                     )
                 }
@@ -697,7 +697,7 @@ private fun ChatSessionSidebar(
             ) {
                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("新对话")
+                Text("New Chat")
             }
             Spacer(modifier = Modifier.height(12.dp))
             Text(
@@ -748,7 +748,7 @@ private fun ChatSessionSidebar(
 }
 
 // ============================================================================
-// 工具/思考类时间线：可折叠横条
+// Tools/思考类时间线：可折叠横条
 // ============================================================================
 
 @Composable
@@ -758,7 +758,7 @@ private fun ExpandableToolTimelineItem(
 ) {
     var expanded by remember(message.id) { mutableStateOf(false) }
     val (_, textColor) = messageColors(message)
-    val label = messageTimelineLabel(message.kind) ?: "步骤"
+    val label = messageTimelineLabel(message.kind) ?: "Step"
     val cleaned = remember(message.content) { ChatMediaParser.extract(message.content).cleanedText }
     val oneLine = cleaned.lines().firstOrNull()?.take(120) ?: ""
 
@@ -944,7 +944,7 @@ fun MessageItem(
                     if (isLong) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = if (expanded) "收起 ▲" else "展开 ▼",
+                            text = if (expanded) "收起 ▲" else "Expand ▼",
                             style = TextStyle(
                                 color = if (message.isUser) Color(0xFF6B21A8).copy(alpha = 0.85f)
                                 else ChatPurple,
@@ -963,7 +963,7 @@ fun MessageItem(
                         }
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "✅ 已复制",
+                            text = "✅ Copied",
                             style = TextStyle(
                                 color = textColor.copy(alpha = 0.6f),
                                 fontSize = 11.sp
@@ -1015,7 +1015,7 @@ fun MessageItem(
 
 private fun messageColors(message: ChatMessage): Pair<Color, Color> {
     if (message.isUser) {
-        // 浅紫气泡 + 深色字，贴近参考图用户消息样式
+        // 浅紫气泡 + 深色字，贴近参考图User消息样式
         return Color(0xFFE9D5FF) to Color(0xFF1E1B4B)
     }
     return when (message.kind) {
@@ -1033,11 +1033,11 @@ private fun messageTimelineLabel(kind: ChatMessageKind): String? {
         ChatMessageKind.USER -> null
         ChatMessageKind.ASSISTANT -> null
         ChatMessageKind.THINKING -> "思考过程"
-        ChatMessageKind.BLOCK_REPLY -> "中间回复"
-        ChatMessageKind.TOOL_CALL -> "工具调用"
-        ChatMessageKind.TOOL_RESULT -> "工具结果"
-        ChatMessageKind.ERROR -> "执行错误"
-        ChatMessageKind.SYSTEM -> "系统消息"
+        ChatMessageKind.BLOCK_REPLY -> "Intermediate reply"
+        ChatMessageKind.TOOL_CALL -> "Tools调用"
+        ChatMessageKind.TOOL_RESULT -> "Tools结果"
+        ChatMessageKind.ERROR -> "执行Error"
+        ChatMessageKind.SYSTEM -> "System消息"
     }
 }
 
@@ -1143,7 +1143,7 @@ private fun ChatMediaPreviewDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("关闭")
+                Text("Close")
             }
         },
         text = {
@@ -1368,7 +1368,7 @@ private fun AnnotatedString.Builder.appendInlineMarkdown(text: String, textColor
 private fun copyToClipboard(context: Context, text: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     clipboard.setPrimaryClip(ClipData.newPlainText("message", text))
-    Toast.makeText(context, "已复制", Toast.LENGTH_SHORT).show()
+    Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
 }
 
 @Composable
@@ -1476,7 +1476,7 @@ fun MessageComposer(
                     ) {
                         Icon(
                             imageVector = if (isVoiceMode) Icons.Default.Keyboard else Icons.Default.Mic,
-                            contentDescription = if (isVoiceMode) "切换键盘输入" else "切换语音输入",
+                            contentDescription = if (isVoiceMode) "切换键盘输入" else "切换Voice input",
                             tint = Color(0xFF666666),
                             modifier = Modifier.size(20.dp)
                         )
@@ -1485,7 +1485,7 @@ fun MessageComposer(
                 Spacer(modifier = Modifier.width(6.dp))
             }
 
-            // 中间区域：文本输入 / 按住说话
+            // 中间区域：文本输入 / Hold to talk
             Surface(
                 modifier = Modifier
                     .weight(1f)
@@ -1529,7 +1529,7 @@ fun MessageComposer(
                             text = when {
                                 isVoiceListening -> "松开结束识别"
                                 isVoiceProcessing -> "正在识别并等待回答..."
-                                else -> "按住说话"
+                                else -> "Hold to talk"
                             },
                             style = TextStyle(
                                 fontSize = 15.sp,
@@ -1704,7 +1704,7 @@ private fun AgentRoundTraceCard(
                     color = Color(0xFFEEF2FF)
                 ) {
                     Text(
-                        text = "第 ${roundIndex.coerceAtLeast(1)} 轮",
+                        text = "第 ${roundIndex.coerceAtLeast(1)} turns",
                         style = TextStyle(
                             fontSize = 11.sp,
                             color = Color(0xFF4338CA),
@@ -1726,7 +1726,7 @@ private fun AgentRoundTraceCard(
                 IconButton(onClick = onToggleExpanded, modifier = Modifier.size(24.dp)) {
                     Icon(
                         imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (expanded) "收起执行轨迹" else "展开执行轨迹",
+                        contentDescription = if (expanded) "收起执行轨迹" else "Expand执行轨迹",
                         tint = Color(0xFF94A3B8),
                         modifier = Modifier.size(18.dp)
                     )
@@ -1765,7 +1765,7 @@ private fun AgentTraceStepRow(
     modifier: Modifier = Modifier
 ) {
     val (_, textColor) = messageColors(message)
-    val title = messageTimelineLabel(message.kind) ?: "步骤"
+    val title = messageTimelineLabel(message.kind) ?: "Step"
     val cleanedContent = remember(message.content) {
         stripInlineStepPrefix(message.content)
     }
