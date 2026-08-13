@@ -40,7 +40,7 @@ import com.shijing.xomniclaw.vision.CameraFramePusher
 import com.shijing.xomniclaw.vision.ScreenFrameSampler
 import com.shijing.xomniclaw.vision.VisionFrameBuffer
 
-/** 语音视觉模式的画面来源：后置 / 前置 / 屏幕截屏流 */
+/** 语音视觉模式的画面Source：后置 / 前置 / 屏幕截屏流 */
 enum class VisionFrameSource {
     CAMERA_BACK,
     CAMERA_FRONT,
@@ -48,7 +48,7 @@ enum class VisionFrameSource {
 }
 
 /**
- * 全屏视觉叠加层：摄像头预览推流，或屏幕 MediaProjection 采样推流。
+ * 全屏视觉叠加层：Camera预览推流，或屏幕 MediaProjection 采样推流。
  */
 @Composable
 fun CameraPreviewOverlay(
@@ -107,9 +107,9 @@ fun CameraPreviewOverlay(
     }
 
     val sourceLabel = when (source) {
-        VisionFrameSource.CAMERA_BACK -> "后置摄像头"
-        VisionFrameSource.CAMERA_FRONT -> "前置摄像头"
-        VisionFrameSource.SCREEN_CAPTURE -> "屏幕画面"
+        VisionFrameSource.CAMERA_BACK -> "Back camera"
+        VisionFrameSource.CAMERA_FRONT -> "Front camera"
+        VisionFrameSource.SCREEN_CAPTURE -> "Screen content"
     }
 
     Box(
@@ -124,7 +124,7 @@ fun CameraPreviewOverlay(
                     modifier = Modifier.fillMaxSize()
                 )
             }
-            // 屏幕采集时保持透明覆盖，减少对当前画面的遮挡。
+            // Screen capture时保持透明覆盖，减少对Current画面的遮挡。
             VisionFrameSource.SCREEN_CAPTURE -> {}
         }
 
@@ -154,10 +154,10 @@ fun CameraPreviewOverlay(
                 Spacer(modifier = Modifier.width(8.dp))
                 Column {
                     // 视频帧仅写入 VisionFrameBuffer，无远端 Hub
-                    val modeNote = "端侧缓冲"
+                    val modeNote = "on-device buffering"
                     Text(
                         text = when (source) {
-                            VisionFrameSource.SCREEN_CAPTURE -> "屏幕采集 → $modeNote"
+                            VisionFrameSource.SCREEN_CAPTURE -> "Screen capture → $modeNote"
                             else -> "$sourceLabel ${framePusher.fps}fps → $modeNote"
                         },
                         style = TextStyle(
@@ -168,8 +168,8 @@ fun CameraPreviewOverlay(
                     )
                     Text(
                         text = when (source) {
-                            VisionFrameSource.SCREEN_CAPTURE -> "右侧按住语音"
-                            else -> "已推送 $frameCount 帧 | ${lastPushMs}ms"
+                            VisionFrameSource.SCREEN_CAPTURE -> "Hold to talk on the right"
+                            else -> "Pushed $frameCount frames | ${lastPushMs}ms"
                         },
                         style = TextStyle(
                             color = Color.White.copy(alpha = 0.75f),
@@ -197,7 +197,7 @@ fun CameraPreviewOverlay(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Cameraswitch,
-                        contentDescription = "切换前后摄像头",
+                        contentDescription = "Switch front/back camera",
                         tint = Color.White,
                         modifier = Modifier.size(24.dp)
                     )
@@ -213,7 +213,7 @@ fun CameraPreviewOverlay(
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = "关闭",
+                    contentDescription = "Close",
                     tint = Color.White,
                     modifier = Modifier.size(24.dp)
                 )
@@ -255,7 +255,7 @@ fun CameraPreviewOverlay(
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Default.Mic,
-                        contentDescription = if (isVoiceListening) "语音识别中" else "按住语音输入",
+                        contentDescription = if (isVoiceListening) "Recognizing speech" else "Hold for voice input",
                         tint = Color.White,
                         modifier = Modifier.size(24.dp)
                     )
@@ -290,7 +290,7 @@ fun CameraPreviewOverlay(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (isVoiceListening) "正在识别语音..." else "右侧悬浮麦克风按住说话",
+                            text = if (isVoiceListening) "Recognizing speech..." else "Use the floating microphone on the right and hold to talk",
                             style = TextStyle(
                                 color = Color.White.copy(alpha = 0.8f),
                                 fontSize = 13.sp
