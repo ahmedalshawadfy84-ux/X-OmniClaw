@@ -29,7 +29,7 @@ class SessionManager {
 
     data class Session(
         val id: String = UUID.randomUUID().toString(),
-        val title: String = "新对话",
+        val title: String = "New Chat",
         val createdAt: Long = System.currentTimeMillis(),
         val messages: List<ChatMessage> = emptyList(),
         val isActive: Boolean = false
@@ -47,7 +47,7 @@ class SessionManager {
                     content
                 }
             } else {
-                "新对话 ${createdAt}"
+                "New Chat ${createdAt}"
             }
         }
     }
@@ -76,7 +76,7 @@ class SessionManager {
         val welcomeMessage = getWelcomeMessage()
 
         return Session(
-            title = "新对话",
+            title = "New Chat",
             messages = listOf(
                 ChatMessage(
                     content = welcomeMessage,
@@ -92,7 +92,7 @@ class SessionManager {
      * Whether a session is just the startup placeholder with no real conversation yet.
      */
     private fun isEphemeralDefaultSession(session: Session): Boolean {
-        return session.title == "新对话" &&
+        return session.title == "New Chat" &&
             session.messages.size == 1 &&
             session.messages.firstOrNull()?.isUser == false
     }
@@ -110,31 +110,31 @@ class SessionManager {
 
         return if (isFirstRun) {
             """
-你好，我是你的 **Android 自动化助手**。
+Hello, I am your **Android automation assistant**.
 
-我可以理解文本、语音、图片和当前屏幕内容，帮你完成应用操作、信息检索、文档处理和自动化任务。
+我可以理解文本、语音、图片和current screen content，帮你Completed应用操作、信息检索、文档处理和automation tasks。
 
-这是你第一次使用这套助手能力，我们先一起完成基础配置，让后续执行更稳定。
+这is your first time using这套助手能力，我们先一起CompletedBasic configuration，让后续执行更稳定。
 
-## 📝 需要配置的文件
+## 📝 Files to configure
 
 你的 workspace 位于：`/sdcard/.xomniclaw/workspace/`
 
-### 1. **AGENTS.md** - Agent 大模型专属策略（仅 Agent 调用时生效）
-### 2. **OPS_GUIDE.md** - 通用执行手册（交互规范与设备执行规则）
+### 1. **AGENTS.md** - Agent 大模型dedicated policy（仅 Agent 调用时生效）
+### 2. **OPS_GUIDE.md** - general execution guide（交互规范与设备执行规则）
 
-完成这些配置后，我们就可以正式开始协作。
+After completing these settings，我们就可以正式开始协作。
 
-你可以试着对我说：`帮我打开小红书搜美食`，或者 `监控飞书消息并总结重点`
+你可以试着对我说：`open Xiaohongshu and search for food`，或者 `monitor Feishu messages and summarize key points`
             """.trimIndent()
         } else {
             """
-你好，我是你的 **Android 自动化助手**。
+Hello, I am your **Android automation assistant**.
 
-我可以帮你：
+I can help you:
 - 控制和测试 Android 应用
-- 理解当前屏幕、图片与语音输入
-- 浏览网页、搜索信息和执行自动化任务
+- 理解Current屏幕、图片与Voice input
+- 浏览网页、搜索信息和执行automation tasks
 - 处理设备操作、文件与工作流协作
 
 告诉我你的目标，我会直接开始处理。
@@ -166,7 +166,7 @@ class SessionManager {
                 if (backendSession != null) {
                     val type = when {
                         key.startsWith("discord_") -> "Discord"
-                        key.contains("_p2p") || key.contains("_group") -> "飞书"
+                        key.contains("_p2p") || key.contains("_group") -> "Feishu"
                         key.startsWith("session_") -> "WebSocket"
                         else -> "其他"
                     }
@@ -407,10 +407,10 @@ class SessionManager {
     /**
      * 合并指定会话的消息列表。
      *
-     * 这里按消息 id 合并而不是按文本合并，避免完整时间线里的重复文本被错误吞掉。
+     * 这里按消息 id 合并而不Yes按文本合并，避免完整时间线里的重复文本被Error吞掉。
      */
     fun mergeSessionMessages(sessionId: String, incomingMessages: List<ChatMessage>) {
-        // 仅合并属于本会话的后端同步消息，防止 sync 竞态或错误 targetSessionId 把 A 会话文案写入 B。
+        // 仅合并属于本会话的后端同步消息，防止 sync 竞态或Error targetSessionId 把 A 会话文案写入 B。
         val safeIncoming = incomingMessages.filter { m ->
             filterBackendMergeRow(sessionId, m)
         }
@@ -418,12 +418,12 @@ class SessionManager {
             val mergedById = LinkedHashMap<String, ChatMessage>()
             session.messages.forEach { mergedById[it.id] = it }
             safeIncoming.forEach { mergedById[it.id] = it }
-            // 保持插入顺序，避免后端回放时间锚点与实时 UI 时间混用时把“执行轨迹”排到用户消息前面。
+            // 保持插入顺序，避免后端回放时间锚点与实时 UI 时间混用时把“执行轨迹”排到User消息前面。
             // LinkedHashMap 的 value 顺序即：原有顺序 + 新增消息顺序；同 id 覆盖不改变原有位置。
             var mergedMessages = mergedById.values.toList()
-            // progress 与 JSONL 双路径写入时，同文案思考条会重复，按正文去重保留一条
+            // progress 与 JSONL 双Path写入时，同文案思考条会重复，按正文去重保留一条
             mergedMessages = dedupeThinkingByContent(mergedMessages)
-            // 先发本地用户气泡 + 后端同步再合并同一条 user，会产生两条相同文案（id 不同）
+            // 先发本地User气泡 + 后端同步再合并同一条 user，会产生两条相同文案（id 不同）
             mergedMessages = dedupeBackendUserEchoOfLocalSend(mergedMessages)
             session.copy(messages = mergedMessages)
         }
@@ -447,7 +447,7 @@ class SessionManager {
     }
 
     /**
-     * 去掉「后端同步那条」重复用户气泡：本地发送已有一条（随机 id），
+     * 去掉「后端同步那条」重复User气泡：本地发送已有一条（随机 id），
      * sync 又用 backend_* id 合并同文案，界面会显示两次。
      */
     private fun dedupeBackendUserEchoOfLocalSend(messages: List<ChatMessage>): List<ChatMessage> {
@@ -464,7 +464,7 @@ class SessionManager {
     }
 
     /**
-     * 归一化用户消息文本，避免「🎤 你好」与「你好」在回放去重时被当成两条。
+     * 归一化User消息文本，避免「🎤 你好」与「你好」在回放去重时被当成两条。
      */
     private fun normalizeUserEchoText(content: String): String {
         return content
@@ -511,7 +511,7 @@ class SessionManager {
     }
 
     /**
-     * 历史会话统一补回系统开场语，避免“开头语缺失”。
+     * 历史会话统一补回System开场语，避免“开头语Missing”。
      */
     private fun buildSessionOpeningMessage(sessionId: String, baseTimeMs: Long): ChatMessage {
         return ChatMessage(
