@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- App基本信息 -->
+    <!-- App basic information -->
     <string name="app_name">X-OmniClaw</string>
 
     <!-- Screen stand-in (屏内替身) float -->
     <string name="companion_float_resize_handle_desc">Drag to resize the stand-in panel</string>
 
-    <!-- 设置相关 -->
+    <!-- Settings相关 -->
     <string name="settings">Settings</string>
     <string name="troubleshooting">Troubleshooting</string>
     <string name="about">About</string>
@@ -29,13 +29,13 @@
     <string name="tutorial_summary">View the tutorial from the XDA Developers page</string>
     <string name="tutorial_key">tutorial</string>
 
-    <!-- 错误信息 -->
+    <!-- Error messages -->
     <string name="error_waiting_title">Stuck on "Waiting"</string>
     <string name="error_waiting_summary">Either you entered the pairing information incorrectly, or your device is not being detected. First, ensure that Wireless Debugging is actually enabled. If that does not work, Try the "Factory reset" setting in X-OmniClaw to try pairing again.</string>
     <string name="error_no_wireless_debugging_title">No "Wireless Debugging" toggle</string>
     <string name="error_no_wireless_debugging_summary">Your device does not natively support Wireless Debugging, which is required by X-OmniClaw. Alternatively, you can use a PC to enable this feature, even on unsupported devices. It will last until the next reboot. Connect the device to a PC and type: adb tcpip 5555</string>
 
-    <!-- 关于页面 -->
+    <!-- About page -->
     <string name="developer_title">Developer</string>
     <string name="developer_summary">X-OmniClaw Team</string>
     <string name="developer_key">developer</string>
@@ -49,6 +49,6 @@
     <string name="licenses_summary">View the open source licenses</string>
     <string name="licenses_key">licenses</string>
 
-    <!-- 无障碍服务 -->
+    <!-- Accessibility service -->
     <string name="accessibility_service_description">X-OmniClaw Accessibility Service for controlling device interface</string>
 </resources>
