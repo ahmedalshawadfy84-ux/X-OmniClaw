@@ -222,7 +222,7 @@ class ChatWindowView @JvmOverloads constructor(
 
                 etInput = EditText(context).apply {
                     layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
-                    hint = "💬 输入指令..."
+                    hint = "💬 Enter instruction..."
                     setTextColor(android.graphics.Color.WHITE)
                     setHintTextColor(android.graphics.Color.parseColor("#718096"))
                     setBackgroundColor(android.graphics.Color.TRANSPARENT)
@@ -285,14 +285,14 @@ class ChatWindowView @JvmOverloads constructor(
     private fun setupListeners() {
         // Stop generation
         btnStopGeneration.setOnClickListener {
-            Log.d(TAG, "停止生成")
+            Log.d(TAG, "Stop generation")
             MainEntryNew.cancelCurrentJob(false)
-            Toast.makeText(context, "已停止生成", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Generation stopped", Toast.LENGTH_SHORT).show()
         }
 
         // Minimize window
         btnMinimize.setOnClickListener {
-            Log.d(TAG, "缩小按钮被点击")
+            Log.d(TAG, "Minimize button clicked")
             try {
                 if (onMinimizeListener != null) {
                     Log.d(TAG, "调用 onMinimizeListener")
@@ -301,7 +301,7 @@ class ChatWindowView @JvmOverloads constructor(
                     Log.e(TAG, "onMinimizeListener 为 null！")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "缩小窗口失败", e)
+                Log.e(TAG, "缩小窗口failed", e)
             }
         }
 
@@ -456,7 +456,7 @@ class ChatMessageAdapter(
                 }
                 elevation = dpToPx(2, context).toFloat()
 
-                // 头部信息（可点击展开）
+                // 头部信息（可点击Expand）
                 val header = LinearLayout(context).apply {
                     id = android.view.View.generateViewId()
                     tag = "header"
@@ -521,7 +521,7 @@ class ChatMessageAdapter(
                     }
                     addView(tvToolBadge)
 
-                    // 展开指示器
+                    // Expand指示器
                     val tvExpandIndicator = TextView(context).apply {
                         id = android.view.View.generateViewId()
                         tag = "expandIndicator"
@@ -540,7 +540,7 @@ class ChatMessageAdapter(
                 }
                 addView(header)
 
-                // 内容预览（折叠状态）
+                // 内容预览（折叠Status）
                 val tvContentPreview = TextView(context).apply {
                     id = android.view.View.generateViewId()
                     tag = "contentPreview"
@@ -556,7 +556,7 @@ class ChatMessageAdapter(
                 }
                 addView(tvContentPreview)
 
-                // 完整内容（展开状态，初始隐藏）
+                // 完整内容（ExpandStatus，初始隐藏）
                 val tvContent = TextView(context).apply {
                     id = R.id.tvContent
                     layoutParams = LinearLayout.LayoutParams(
@@ -571,7 +571,7 @@ class ChatMessageAdapter(
                 }
                 addView(tvContent)
 
-                // 推理过程容器（只在展开状态显示）
+                // Reasoning process容器（只在ExpandStatus显示）
                 val layoutReasoning = LinearLayout(context).apply {
                     id = R.id.layoutReasoning
                     layoutParams = LinearLayout.LayoutParams(
@@ -585,7 +585,7 @@ class ChatMessageAdapter(
 
                     val tvReasoningHeader = TextView(context).apply {
                         id = R.id.tvReasoningHeader
-                        text = "🧠 推理过程"
+                        text = "🧠 Reasoning process"
                         textSize = 13f
                         setTextColor(android.graphics.Color.parseColor("#C084FC"))
                         setTypeface(null, android.graphics.Typeface.BOLD)
@@ -612,7 +612,7 @@ class ChatMessageAdapter(
                 }
                 addView(layoutReasoning)
 
-                // 底部操作栏（只在展开状态显示）
+                // 底部操作栏（只在ExpandStatus显示）
                 val bottomBar = LinearLayout(context).apply {
                     id = android.view.View.generateViewId()
                     tag = "bottomBar"
@@ -654,13 +654,13 @@ class ChatMessageAdapter(
                 ).apply {
                     gravity = android.view.Gravity.CENTER_HORIZONTAL
                 }
-                text = "今天 14:30"
+                text = "Today 14:30"
                 textSize = 12f
                 setTextColor(android.graphics.Color.parseColor("#888888"))
                 setPadding(dpToPx(4, context), dpToPx(4, context), dpToPx(4, context), dpToPx(4, context))
                 visibility = View.GONE
             }
-            addView(tvTimeDivider, 0) // 添加到顶部
+            addView(tvTimeDivider, 0) // Add到顶部
         }
     }
 
@@ -697,14 +697,14 @@ class ChatMessageAdapter(
         private var isExpanded = false
 
         fun bind(message: ChatMessage) {
-            // 重置展开状态
+            // 重置ExpandStatus
             isExpanded = false
 
             // 角色
             tvRole.text = when (message.role) {
-                "user" -> "👤 用户"
-                "assistant" -> "🤖 AI 助手"
-                "tool" -> "🔧 工具"
+                "user" -> "👤 User"
+                "assistant" -> "🤖 AI Assistant"
+                "tool" -> "🔧 Tools"
                 else -> message.role
             }
 
@@ -721,7 +721,7 @@ class ChatMessageAdapter(
                 tvToolBadge.visibility = View.GONE
             }
 
-            // 设置预览和完整内容
+            // Settings预览和完整内容
             val preview = if (message.content.length > 60) {
                 message.content.substring(0, 60) + "..."
             } else {
@@ -730,13 +730,13 @@ class ChatMessageAdapter(
             contentPreview?.text = preview
             markwon.setMarkdown(tvContent, message.content)
 
-            // 如果正在流式输出，添加光标效果
+            // 如果正在流式输出，Add光标效果
             if (message.isStreaming) {
                 tvContent.append(" ▋")
                 contentPreview?.append(" ▋")
             }
 
-            // 推理过程
+            // Reasoning process
             if (message.reasoning != null) {
                 layoutReasoning.visibility = View.VISIBLE
                 tvReasoningContent.text = message.reasoning
@@ -744,18 +744,18 @@ class ChatMessageAdapter(
                 layoutReasoning.visibility = View.GONE
             }
 
-            // 初始状态：显示预览，隐藏详情
+            // 初始Status：显示预览，隐藏详情
             contentPreview?.visibility = View.VISIBLE
             tvContent.visibility = View.GONE
             layoutReasoning.visibility = View.GONE
             bottomBar?.visibility = View.GONE
             expandIndicator?.text = "▼"
 
-            // 点击头部展开/收起
+            // 点击头部Expand/收起
             header?.setOnClickListener {
                 isExpanded = !isExpanded
                 if (isExpanded) {
-                    // 展开
+                    // Expand
                     contentPreview?.visibility = View.GONE
                     tvContent.visibility = View.VISIBLE
                     if (message.reasoning != null) {
@@ -778,7 +778,7 @@ class ChatMessageAdapter(
                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 val clip = ClipData.newPlainText("message", message.content)
                 clipboard.setPrimaryClip(clip)
-                Toast.makeText(context, "已复制", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
             }
 
             // 时间分隔线（简化版，暂时隐藏）
