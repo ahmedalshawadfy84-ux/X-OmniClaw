@@ -19,7 +19,10 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.shijing.xomniclaw.R
 import com.shijing.xomniclaw.databinding.ActivityModelSetupBinding
+import androidx.lifecycle.lifecycleScope
 import com.shijing.xomniclaw.config.ConfigLoader
+import com.shijing.xomniclaw.config.CustomProviderModelsFetcher
+import kotlinx.coroutines.launch
 import com.shijing.xomniclaw.config.ModelDefinition
 import com.shijing.xomniclaw.config.ModelsConfig
 import com.shijing.xomniclaw.config.ProviderConfig
@@ -97,6 +100,13 @@ class ModelSetupActivity : AppCompatActivity() {
                     ModelPreset("gpt-4.1-mini", "GPT-4.1 Mini (快速)"),
                     ModelPreset("o3", "o3 (推理)")
                 )
+            ),
+            "custom" to ProviderPreset(
+                name = "Custom API Key",
+                baseUrl = "https://api.openai.com/v1",
+                api = "openai-completions",
+                hint = "Custom provider: enter any OpenAI-compatible API Key (sk-..., nvapi-..., etc.) and Base URL, then tap Fetch models.",
+                models = emptyList()
             )
         )
     }
@@ -105,6 +115,7 @@ class ModelSetupActivity : AppCompatActivity() {
     private val configLoader by lazy { ConfigLoader(this) }
     private var selectedProvider = "openrouter"
     private var advancedExpanded = false
+    private val fetchedCustomModels = mutableListOf<ModelPreset>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -119,6 +130,7 @@ class ModelSetupActivity : AppCompatActivity() {
         setupDefaultMode()
         setupAdvancedToggle()
         setupProviderSelection()
+        setupFetchModelsButton()
         setupButtons()
     }
 
@@ -168,6 +180,7 @@ class ModelSetupActivity : AppCompatActivity() {
                 checkedIds.contains(R.id.chip_openrouter) -> "openrouter"
                 checkedIds.contains(R.id.chip_anthropic) -> "anthropic"
                 checkedIds.contains(R.id.chip_openai) -> "openai"
+                checkedIds.contains(R.id.chip_custom) -> "custom"
                 else -> "openrouter"
             }
             selectedProvider = provider
@@ -192,6 +205,23 @@ class ModelSetupActivity : AppCompatActivity() {
     private fun openRouterStaticModels(): List<ModelPreset> =
         PROVIDERS["openrouter"]?.models.orEmpty()
 
+    private fun bindCustomModelPicker() {
+        val modelNames = fetchedCustomModels.map { it.displayName }
+        val adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_dropdown_item_1line,
+            modelNames
+        )
+        binding.actModel.setAdapter(adapter)
+        binding.actModel.inputType = android.text.InputType.TYPE_NULL
+        binding.actModel.threshold = 1
+        if (modelNames.isNotEmpty()) {
+            binding.actModel.setText(modelNames[0], false)
+        } else {
+            binding.actModel.setText("", false)
+        }
+    }
+
     private fun applyProviderPreset(providerKey: String) {
         val preset = PROVIDERS[providerKey] ?: return
 
@@ -201,26 +231,35 @@ class ModelSetupActivity : AppCompatActivity() {
                 "openrouter" -> "OpenRouter API Key"
                 "anthropic" -> "Anthropic API Key"
                 "openai" -> "OpenAI API Key"
+                "custom" -> "Custom API Key"
                 else -> "API Key"
             }
             (tilApiKey as? com.google.android.material.textfield.TextInputLayout)?.helperText = when (providerKey) {
                 "openrouter" -> "以 sk-or-v1- 开头"
                 "anthropic" -> "以 sk-ant- 开头"
                 "openai" -> "以 sk- 开头"
+                "custom" -> "支持 sk-、nvapi- 或其他兼容服务商密钥"
                 else -> null
             }
 
-            // Base URL（高级选项下仍隐藏，由各预设固定）
-            etSetupApiBase.setText(preset.baseUrl)
-            tilApiBase.visibility = View.GONE
-            etSetupApiBase.isEnabled = false
+            // Base URL. Built-in presets stay fixed; Custom provider is user-editable.
+            if (providerKey != "custom" || etSetupApiBase.text.isNullOrBlank()) {
+                etSetupApiBase.setText(preset.baseUrl)
+            }
+            val showCustomBaseUrl = providerKey == "custom"
+            tilApiBase.visibility = if (showCustomBaseUrl) View.VISIBLE else View.GONE
+            etSetupApiBase.isEnabled = showCustomBaseUrl
+            btnFetchModels.visibility = if (showCustomBaseUrl) View.VISIBLE else View.GONE
 
             // Provider hint
             tvProviderHint.text = preset.hint
             tvProviderHint.visibility = if (advancedExpanded) View.VISIBLE else View.GONE
 
-            // 模型选择：仅 OpenRouter 在高级选项下展示；其余保持隐藏（与历史行为一致）
-            if (providerKey == "openrouter") {
+            // 模型选择：OpenRouter 和 Custom 在高级选项下展示。
+            if (providerKey == "custom") {
+                tilModel.visibility = if (advancedExpanded) View.VISIBLE else View.GONE
+                bindCustomModelPicker()
+            } else if (providerKey == "openrouter") {
                 tilModel.visibility = if (advancedExpanded) View.VISIBLE else View.GONE
                 actModel.inputType = android.text.InputType.TYPE_NULL
                 actModel.threshold = 1
@@ -239,6 +278,46 @@ class ModelSetupActivity : AppCompatActivity() {
                 tilModel.visibility = View.GONE
                 actModel.inputType = android.text.InputType.TYPE_NULL
                 actModel.threshold = 1
+            }
+        }
+    }
+
+    private fun setupFetchModelsButton() {
+        binding.btnFetchModels.setOnClickListener {
+            if (selectedProvider != "custom") return@setOnClickListener
+
+            val apiKey = binding.etSetupApiKey.text?.toString()?.trim().orEmpty()
+            val baseUrl = binding.etSetupApiBase.text?.toString()?.trim().orEmpty()
+            binding.tilApiKey.error = null
+            binding.tilApiBase.error = null
+
+            if (apiKey.isBlank()) {
+                binding.tilApiKey.error = "请输入 API Key"
+                return@setOnClickListener
+            }
+            if (baseUrl.isBlank()) {
+                binding.tilApiBase.error = "请输入 Base URL"
+                return@setOnClickListener
+            }
+
+            binding.btnFetchModels.isEnabled = false
+            binding.btnFetchModels.text = "Fetching..."
+            lifecycleScope.launch {
+                try {
+                    val ids = CustomProviderModelsFetcher.fetchModelIds(apiKey, baseUrl)
+                    fetchedCustomModels.clear()
+                    fetchedCustomModels.addAll(ids.map { id ->
+                        ModelPreset(id = id, displayName = id, contextWindow = 128000, maxTokens = 8192)
+                    })
+                    bindCustomModelPicker()
+                    Toast.makeText(this@ModelSetupActivity, "Fetched ${ids.size} models", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Fetch custom models failed", e)
+                    Toast.makeText(this@ModelSetupActivity, "Fetch failed: ${e.message}", Toast.LENGTH_LONG).show()
+                } finally {
+                    binding.btnFetchModels.isEnabled = true
+                    binding.btnFetchModels.text = "Fetch models"
+                }
             }
         }
     }
@@ -316,8 +395,14 @@ class ModelSetupActivity : AppCompatActivity() {
         val userInputKey = binding.etSetupApiKey.text?.toString()?.trim()
         val selectedModelDisplay = binding.actModel.text?.toString()?.trim()
 
-        // If user provided a key, use it; otherwise use the built-in encrypted key
+        val preset = PROVIDERS[selectedProvider] ?: return
+
+        // If user provided a key, use it; otherwise use the built-in encrypted key for built-in OpenRouter only.
         val apiKey = if (userInputKey.isNullOrEmpty()) {
+            if (selectedProvider == "custom") {
+                binding.tilApiKey.error = "请输入 API Key"
+                return
+            }
             val builtInKey = com.shijing.xomniclaw.config.BuiltInKeyProvider.getKey()
             if (builtInKey.isNullOrEmpty()) {
                 binding.tilApiKey.error = "请输入 API Key"
@@ -329,22 +414,29 @@ class ModelSetupActivity : AppCompatActivity() {
         }
         binding.tilApiKey.error = null
 
-        val apiBase = if (advancedExpanded) {
+        val apiBase = if (selectedProvider == "custom" || advancedExpanded) {
             binding.etSetupApiBase.text?.toString()?.trim()
         } else {
             null
         }
+        if (selectedProvider == "custom" && apiBase.isNullOrBlank()) {
+            binding.tilApiBase.error = "请输入 Base URL"
+            return
+        }
+        binding.tilApiBase.error = null
 
-        val preset = PROVIDERS[selectedProvider] ?: return
         val choice: ModelPreset? = when (selectedProvider) {
-            "openrouter" -> {
-                openRouterStaticModels().find { it.displayName == selectedModelDisplay }
-            }
+            "openrouter" -> openRouterStaticModels().find { it.displayName == selectedModelDisplay }
+            "custom" -> fetchedCustomModels.find { it.displayName == selectedModelDisplay || it.id == selectedModelDisplay }
             else -> preset.models.find { it.displayName == selectedModelDisplay } ?: preset.models.firstOrNull()
         }
-        val modelId = choice?.id ?: (preset.models.firstOrNull()?.id ?: "")
+        val modelId = choice?.id ?: selectedModelDisplay?.takeIf { it.isNotBlank() } ?: (preset.models.firstOrNull()?.id ?: "")
         val matchedPreset = choice
 
+        if (selectedProvider == "custom" && modelId.isBlank()) {
+            binding.tilModel.error = "请先 Fetch models 并选择模型"
+            return
+        }
         binding.tilModel.error = null
 
         try {
