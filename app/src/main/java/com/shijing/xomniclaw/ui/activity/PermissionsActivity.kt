@@ -12,7 +12,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 
 /**
- * 权限页代理：直接跳转到合并进主 app 的 observer 权限页，避免用户看到两层权限页。
+ * Permissions页代理：直接跳转到合并进主 app 的 observer Permissions页，避免User看到两层Permissions页。
  */
 class PermissionsActivity : AppCompatActivity() {
 
