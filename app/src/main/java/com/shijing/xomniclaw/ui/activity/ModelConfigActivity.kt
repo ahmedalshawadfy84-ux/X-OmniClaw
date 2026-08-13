@@ -18,11 +18,13 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.shijing.xomniclaw.R
 import com.shijing.xomniclaw.databinding.ActivityModelConfigBinding
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textfield.TextInputEditText
 import com.shijing.xomniclaw.config.*
+import kotlinx.coroutines.launch
 
 /**
  * 模型配置页面 — 两页式设计
@@ -271,19 +273,24 @@ class ModelConfigActivity : AppCompatActivity() {
         val isConfigured = configuredProviderIds.contains(provider.id)
         binding.tvProviderStatus.visibility = if (isConfigured) View.VISIBLE else View.GONE
 
+        val isCustomProvider = provider.id == "custom"
+        var existingProvider: ProviderConfig? = null
+
         // API Key
         binding.tilApiKey.hint = provider.keyHint
         binding.etApiKey.setText("")
         if (!provider.keyRequired) {
             binding.tilApiKey.helperText = "可选（有内置免费 Key）"
+        } else if (isCustomProvider) {
+            binding.tilApiKey.helperText = "支持 sk-、nvapi- 或其他 OpenAI-compatible 服务商密钥"
         } else {
             binding.tilApiKey.helperText = null
         }
 
-        // Load existing key if configured
+        // Load existing key/base URL/models if configured
         try {
             val config = configLoader.loadOmniClawConfig()
-            val existingProvider = config.resolveProviders()[provider.id]
+            existingProvider = config.resolveProviders()[provider.id]
             if (existingProvider != null) {
                 val key = existingProvider.apiKey
                 if (!key.isNullOrBlank() && !key.startsWith("\${")) {
@@ -312,17 +319,33 @@ class ModelConfigActivity : AppCompatActivity() {
             binding.cardTutorial.visibility = View.GONE
         }
 
-        // Preset models
+        // Preset models. Custom provider restores saved models so users can edit later.
         userAddedModels.clear()
-        buildModelRadioGroup(provider.presetModels)
+        if (isCustomProvider) {
+            userAddedModels.addAll(existingProvider?.models.orEmpty().map { model ->
+                PresetModel(
+                    id = model.id,
+                    name = model.name.ifBlank { model.id },
+                    contextWindow = model.contextWindow,
+                    maxTokens = model.maxTokens,
+                    reasoning = model.reasoning,
+                    input = model.input.map { it.toString() }
+                )
+            })
+        }
+        buildModelRadioGroup(provider.presetModels + userAddedModels)
+
+        // Fetch models button (custom provider only)
+        binding.btnFetchModels.visibility = if (isCustomProvider) View.VISIBLE else View.GONE
+        binding.btnFetchModels.setOnClickListener { fetchCustomModels(provider) }
 
         // Manual add button
         binding.btnAddModel.setOnClickListener { showAddModelDialog() }
 
-        // Advanced section
-        advancedExpanded = false
-        binding.layoutAdvanced.visibility = View.GONE
-        binding.ivAdvancedArrow.rotation = 0f
+        // Advanced section. Custom provider keeps Base URL/API type visible because these fields are required.
+        advancedExpanded = isCustomProvider
+        binding.layoutAdvanced.visibility = if (advancedExpanded) View.VISIBLE else View.GONE
+        binding.ivAdvancedArrow.rotation = if (advancedExpanded) 180f else 0f
 
         binding.cardAdvancedToggle.setOnClickListener {
             advancedExpanded = !advancedExpanded
@@ -335,19 +358,57 @@ class ModelConfigActivity : AppCompatActivity() {
         }
 
         // Base URL (pre-filled)
-        binding.etBaseUrl.setText(provider.baseUrl)
+        binding.etBaseUrl.setText(existingProvider?.baseUrl ?: provider.baseUrl)
 
         // API type dropdown
         val apiTypeLabels = ProviderRegistry.CUSTOM_API_TYPES.map { it.second }
         val apiTypeAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, apiTypeLabels)
         binding.dropdownApiType.setAdapter(apiTypeAdapter)
-        val currentApiIndex = ProviderRegistry.CUSTOM_API_TYPES.indexOfFirst { it.first == provider.api }
+        val currentApiIndex = ProviderRegistry.CUSTOM_API_TYPES.indexOfFirst { it.first == (existingProvider?.api ?: provider.api) }
         if (currentApiIndex >= 0) {
             binding.dropdownApiType.setText(apiTypeLabels[currentApiIndex], false)
         }
 
         // Save button
         binding.btnSave.setOnClickListener { saveProviderConfig(provider) }
+    }
+
+
+    private fun fetchCustomModels(provider: ProviderDefinition) {
+        val apiKey = binding.etApiKey.text?.toString()?.trim().orEmpty()
+        val baseUrl = binding.etBaseUrl.text?.toString()?.trim().orEmpty()
+        binding.tilApiKey.error = null
+        binding.tilBaseUrl.error = null
+
+        if (apiKey.isBlank()) {
+            binding.tilApiKey.error = "请输入 API Key"
+            return
+        }
+        if (baseUrl.isBlank()) {
+            binding.tilBaseUrl.error = "请输入 Base URL"
+            return
+        }
+
+        binding.btnFetchModels.isEnabled = false
+        binding.btnFetchModels.text = "Fetching..."
+        lifecycleScope.launch {
+            try {
+                val ids = CustomProviderModelsFetcher.fetchModelIds(apiKey, baseUrl)
+                userAddedModels.clear()
+                userAddedModels.addAll(ids.map { id ->
+                    PresetModel(id = id, name = id, contextWindow = 128000, maxTokens = 8192)
+                })
+                selectedModelId = ids.firstOrNull()
+                buildModelRadioGroup(provider.presetModels + userAddedModels)
+                Toast.makeText(this@ModelConfigActivity, "Fetched ${ids.size} models", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Log.e(TAG, "Fetch custom models failed", e)
+                Toast.makeText(this@ModelConfigActivity, "Fetch failed: ${e.message}", Toast.LENGTH_LONG).show()
+            } finally {
+                binding.btnFetchModels.isEnabled = true
+                binding.btnFetchModels.text = "Fetch models"
+            }
+        }
     }
 
     private fun buildModelRadioGroup(models: List<PresetModel>) {
@@ -461,11 +522,17 @@ class ModelConfigActivity : AppCompatActivity() {
         }
 
         // Resolve advanced params
-        val customBaseUrl = if (advancedExpanded) {
+        val isCustomProvider = provider.id == "custom"
+        val customBaseUrl = if (advancedExpanded || isCustomProvider) {
             binding.etBaseUrl.text?.toString()?.trim()?.takeIf { it.isNotBlank() }
         } else null
+        if (isCustomProvider && customBaseUrl.isNullOrBlank()) {
+            binding.tilBaseUrl.error = "请输入 Base URL"
+            return
+        }
+        binding.tilBaseUrl.error = null
 
-        val customApiType = if (advancedExpanded) {
+        val customApiType = if (advancedExpanded || isCustomProvider) {
             val selectedLabel = binding.dropdownApiType.text?.toString()
             ProviderRegistry.CUSTOM_API_TYPES.find { it.second == selectedLabel }?.first
         } else null
