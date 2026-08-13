@@ -246,6 +246,26 @@ object ProviderRegistry {
         order = 20
     )
 
+    val CUSTOM = ProviderDefinition(
+        id = "custom",
+        name = "Custom API Key",
+        description = "OpenAI-compatible custom provider",
+        baseUrl = "https://api.openai.com/v1",
+        api = ModelApi.OPENAI_COMPLETIONS,
+        keyRequired = true,
+        keyHint = "Custom API Key (sk-..., nvapi-..., etc.)",
+        envVarName = "CUSTOM_API_KEY",
+        tutorialSteps = listOf(
+            "Enter the provider API Key",
+            "Enter the provider Base URL, for example https://integrate.api.nvidia.com/v1",
+            "Tap Fetch models",
+            "Select a returned model and save"
+        ),
+        presetModels = emptyList(),
+        group = ProviderGroup.PRIMARY,
+        order = 25
+    )
+
     val OPENAI = ProviderDefinition(
         id = "openai",
         name = "OpenAI",
@@ -441,7 +461,7 @@ object ProviderRegistry {
 
     /** 所有已注册 Provider，按 order 排序 */
     val ALL: List<ProviderDefinition> = listOf(
-        OPENROUTER, ANTHROPIC, OPENAI, OLLAMA,
+        OPENROUTER, ANTHROPIC, CUSTOM, OPENAI, OLLAMA,
         MOONSHOT, MINIMAX, MIMIMAX
     ).sortedBy { it.order }
 
