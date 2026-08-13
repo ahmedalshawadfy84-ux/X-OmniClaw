@@ -104,7 +104,7 @@ class UnifiedLLMProvider(private val context: Context) {
     }
 
     /**
-     * 带工具调用的聊天
+     * 带Tools调用的聊天
      *
      * @param messages Message list
      * @param tools Tool definition list (old format)
@@ -176,14 +176,14 @@ class UnifiedLLMProvider(private val context: Context) {
             val model = provider.models.find { it.id == modelId }
                 ?: throw IllegalArgumentException("Model not found: $modelId in provider: $providerName")
 
-            // OpenRouter 对无效/缺失 Key 统一返回 401 + User not found；不再使用已下线的内置 Key，须显式配置
+            // OpenRouter 对无效/Missing Key 统一Back 401 + User not found；不再使用已下线的Built-in Key，须显式Settings
             if (providerName == "openrouter") {
                 val k = provider.apiKey?.trim()
-                if (k.isNullOrEmpty() || k == "未配置" || k.startsWith("\${")) {
+                if (k.isNullOrEmpty() || k == "Not configured" || k.startsWith("\${")) {
                     throw LLMException(
-                        "OpenRouter 未配置有效 API Key。请在应用「模型配置」中填写以 sk-or-v1- 开头的个人密钥，" +
-                            "或编辑 /sdcard/.xomniclaw/xomniclaw.json 将 models.providers.openrouter.apiKey 改为真实字符串 " +
-                            "（若保留 \${OPENROUTER_API_KEY} 且未设系统环境变量，则不会自动注入 Key）。"
+                        "OpenRouter does not have a valid API Key configured. Enter your personal key starting with sk-or-v1- in Model Configuration," +
+                            "or edit /sdcard/.xomniclaw/xomniclaw.json and set models.providers.openrouter.apiKey to a real string " +
+                            "（若保留 \${OPENROUTER_API_KEY} 且未设System环境变量，则不会Auto注入 Key）。"
                     )
                 }
             }
@@ -206,15 +206,15 @@ class UnifiedLLMProvider(private val context: Context) {
                 forceMimimaxToImageApi -> {
                     Log.w(
                         TAG,
-                        "⚠️ provider=mimimax 且本次请求包含图片，自动将 API 切到 minimax-images-understand。"
+                        "⚠️ provider=mimimax 且本次请求包含图片，automatically switching API to minimax-images-understand。"
                     )
                     ModelApi.MINIMAX_IMAGES_UNDERSTAND
                 }
                 fallbackMiniMaxImageToOpenAI -> {
                     Log.w(
                         TAG,
-                        "⚠️ API=minimax-images-understand 但当前请求无图片，" +
-                            "自动回退到 openai-completions，避免纯文本误走 /images/understand。"
+                        "⚠️ API=minimax-images-understand 但current request has no image，" +
+                            "automatically falling back to openai-completions to avoid sending text-only requests to /images/understand."
                     )
                     ModelApi.OPENAI_COMPLETIONS
                 }
@@ -339,26 +339,26 @@ class UnifiedLLMProvider(private val context: Context) {
 
         if (code == 401) {
             if (openRouter && errorBody.contains("User not found", ignoreCase = true)) {
-                return " | 提示: 这是 OpenRouter 的 401，表示当前 API Key 对账户无效（错填/已撤销/内置 Key 已失效）。" +
-                    "请在应用「模型配置」中填写自己的 sk-or-v1-...，或到 https://openrouter.ai/keys 重新创建密钥。"
+                return " | 提示: this is an OpenRouter 401, meaning the current API Key is invalid for the account（错填/已撤销/built-in key expired）。" +
+                    "enter your own sk-or-v1-... key in Model Configuration, or recreate a key at https://openrouter.ai/keys."
             }
             if (openRouter) {
-                return " | 提示: OpenRouter 返回 401，请核对 API Key（sk-or-v1-...）与密钥页是否一致。"
+                return " | 提示: OpenRouter returned 401. Check that the API Key (sk-or-v1-...) matches the key page."
             }
-            return " | 提示: 401 表示鉴权失败，请检查 `$providerName` 的 apiKey 与 baseUrl。"
+            return " | 提示: 401 means authentication failed，请检查 `$providerName` 的 apiKey 与 baseUrl。"
         }
 
-        // OpenRouter 429：免费模型常出现上游临时限流（metadata.raw 中 rate-limited upstream）
+        // OpenRouter 429：Free模型常出现上游临时限流（metadata.raw 中 rate-limited upstream）
         if (code == 429 && openRouter) {
             val freeTier = errorBody.contains(":free", ignoreCase = true) ||
                 errorBody.contains("rate-limited", ignoreCase = true) ||
                 errorBody.contains("rate limit", ignoreCase = true)
             return if (freeTier) {
-                " | 提示: 这是 OpenRouter 的 429 限流（多发生在免费模型 :free 或上游 Google 等配额紧张时）。" +
+                " | 提示: 这Yes OpenRouter 的 429 限流（多发生在Free模型 :free 或上游 Google 等配额紧张时）。" +
                     "可稍后重试；或到 https://openrouter.ai/settings/integrations 绑定/叠加自身密钥以抬高额度；" +
-                    "或在「模型配置」中改选其他预置模型（如其它 :free 模型或付费模型）。"
+                    "或在「Model Configuration」中改选其他预置模型（如其它 :free 模型或Paid模型）。"
             } else {
-                " | 提示: OpenRouter 返回 429，表示请求过频或账户用量已达限制，请稍后重试并检查 OpenRouter 用量/套餐。"
+                " | 提示: OpenRouter Back 429，表示请求过频或账户用量已达限制，请稍后重试并检查 OpenRouter 用量/套餐。"
             }
         }
 
@@ -371,7 +371,7 @@ class UnifiedLLMProvider(private val context: Context) {
         apiUrl: String,
         messages: List<Message>,
         requestBody: JSONObject,
-        /** 与实际上传一致（已去掉 JSON 中可选的 `\\/` 转义以省 token） */
+        /** 与实际上传一致（已去掉 JSON 中optional的 `\\/` 转义以省 token） */
         wireRequestBody: String,
         headers: okhttp3.Headers,
         api: String,
@@ -450,14 +450,14 @@ class UnifiedLLMProvider(private val context: Context) {
             false
         }
         val logging = config.logging
-        // 需要同时满足：配置允许 + 设置页开关开启。
+        // 需要同时满足：Settings允许 + Settings页开关开启。
         if (!logging.dumpPrompt || !settingsEnabled) {
             if (!loggedDumpPromptDisabledHint) {
                 loggedDumpPromptDisabledHint = true
                 Log.w(
                     TAG,
                     "Prompt dump disabled (logging.dumpPrompt=${logging.dumpPrompt}, " +
-                        "settings.switch=$settingsEnabled). 在设置页开启“Prompt Dumps”且 logging.dumpPrompt=true 后，" +
+                        "settings.switch=$settingsEnabled). 在Settings页开启“Prompt Dumps”且 logging.dumpPrompt=true 后，" +
                         "每次请求会写入 /sdcard/.xomniclaw/workspace/logs/prompt-dumps/。"
                 )
             }
@@ -507,7 +507,7 @@ class UnifiedLLMProvider(private val context: Context) {
             dumpFile.writeText(content)
             Log.i(TAG, "📝 Prompt dumped: ${dumpFile.absolutePath}")
 
-            // 摄像头/语音等「含 base64 图」的请求：主 dump 极易超过 dumpPromptMaxChars 被截断，或难以阅读。
+            // Camera/语音等「含 base64 图」的请求：主 dump 极易超过 dumpPromptMaxChars 被截断，或难以阅读。
             // 另写小体积可读版：保留每条消息的文本，每图只记录 char 数，便于核对“送给大模型的实际语义”。
             buildMultimodalReadableSnapshot(messages, providerName, modelId, apiUrl)?.let { snap ->
                 val base = filename.removeSuffix(".json")
@@ -522,7 +522,7 @@ class UnifiedLLMProvider(private val context: Context) {
 
     /**
      * 若本次请求在 [Message] 层带图片（如 LocalVoiceVisionHub 的 imageDataUrls），
-     * 生成可读的 prompt 快照常用于对照；无图则返回 null，不落副文件。
+     * 生成可读的 prompt 快照常用于对照；无图则Back null，不落副文件。
      */
     private fun buildMultimodalReadableSnapshot(
         messages: List<Message>,
@@ -558,7 +558,7 @@ class UnifiedLLMProvider(private val context: Context) {
             .put("provider", providerName)
             .put("model", modelId)
             .put("apiUrl", apiUrl)
-            .put("note", "同批次完整含 base64 的 requestBody 见同目录、无 _readable 后缀的 .json。语音/摄像头上游为 LocalVoiceVisionHub。")
+            .put("note", "同批次完整含 base64 的 requestBody 见同目录、无 _readable 后缀的 .json。语音/Camera上游为 LocalVoiceVisionHub。")
             .put("totalApproxImageFieldChars", totalImageChars)
             .put("messages", arr)
     }
@@ -575,7 +575,7 @@ class UnifiedLLMProvider(private val context: Context) {
     }
 
     /**
-     * 判断错误是否可重试
+     * 判断ErrorYesNo可重试
      */
     private fun isRetryable(exception: LLMException): Boolean {
         val message = exception.message?.lowercase() ?: ""
@@ -599,7 +599,7 @@ class UnifiedLLMProvider(private val context: Context) {
     }
 
     /**
-     * 简单聊天（无工具）
+     * 简单聊天（无Tools）
      */
     suspend fun simpleChat(
         userMessage: String,
@@ -649,15 +649,15 @@ class UnifiedLLMProvider(private val context: Context) {
             if (firstEntry != null) {
                 val firstModel = firstEntry.value.models.firstOrNull()
                 if (firstModel != null) {
-                    Log.w(TAG, "⚠️ 默认模型 '$defaultModel' 的 provider 不存在，fallback 到 '${firstEntry.key}/${firstModel.id}'")
+                    Log.w(TAG, "⚠️ Default model '$defaultModel' 的 provider 不存在，fallback 到 '${firstEntry.key}/${firstModel.id}'")
                     return Pair(firstEntry.key, firstModel.id)
                 }
             }
             throw IllegalArgumentException(
-                "没有可用的模型配置，请先配置模型。" +
+                "No model configuration available. Please configure a model first." +
                     "请确认 /sdcard/.xomniclaw/xomniclaw.json 中 models.providers 非空，" +
                     "且 agents.defaults.model.primary 指向存在的 provider/模型 id；" +
-                    "若曾启用飞书但未填写 appId/appSecret，请更新应用版本或暂时关闭 channels.feishu.enabled。"
+                    "若曾启用Feishu但未填写 appId/appSecret，请更新应用版本或暂时Close channels.feishu.enabled。"
             )
         }
 
@@ -666,7 +666,7 @@ class UnifiedLLMProvider(private val context: Context) {
     }
 
     /**
-     * 尝试解析模型引用，找不到时返回 null 而不是抛异常
+     * 尝试解析模型引用，找不到时Back null 而不Yes抛异常
      */
     private fun tryParseModelRef(modelRef: String): Pair<String, String>? {
         // Step 1: Try to find complete modelRef as model ID
@@ -694,7 +694,7 @@ class UnifiedLLMProvider(private val context: Context) {
 
     /**
      * minimax-images-understand 仅适用于图像输入。
-     * 若本次消息没有图片，自动回退到 OpenAI chat/completions，避免把纯文本请求打到 /images/understand。
+     * 若本次消息没有图片，Auto回退到 OpenAI chat/completions，避免把纯文本请求打到 /images/understand。
      */
     private fun shouldAutoFallbackMiniMaxImageApi(
         declaredApi: String,
@@ -707,8 +707,8 @@ class UnifiedLLMProvider(private val context: Context) {
     }
 
     /**
-     * 兼容历史配置：若 provider 已选 mimimax 且本次有图，优先强制走 images/understand。
-     * 这样即使配置里 api 仍是 openai-completions，也能自动纠正到图像接口。
+     * 兼容历史Settings：若 provider 已选 mimimax 且本次有图，优先强制走 images/understand。
+     * 这样即使Settings里 api 仍Yes openai-completions，也能Auto纠正到图像接口。
      */
     private fun shouldForceMimimaxImageApi(
         providerName: String,
@@ -748,7 +748,7 @@ class UnifiedLLMProvider(private val context: Context) {
             }
             ModelApi.MINIMAX_IMAGES_UNDERSTAND -> {
                 if (baseUrl.lowercase().contains("mimimax.cn")) {
-                    // mimimax 中转固定走 /v1/images/understand，避免用户填成 /chat/completions 导致错路由。
+                    // mimimax 中转固定走 /v1/images/understand，避免User填成 /chat/completions 导致错路由。
                     buildMimimaxImagesEndpoint(baseUrl)
                 } else {
                     appendPathIfMissing(baseUrl, "/images/understand")
@@ -766,7 +766,7 @@ class UnifiedLLMProvider(private val context: Context) {
     }
 
     /**
-     * 若 baseUrl 已包含目标路径，则直接返回；否则补齐路径，避免出现 `/xxx/yyy/yyy` 这种重复。
+     * 若 baseUrl 已包含目标Path，则直接Back；No则补齐Path，避免出现 `/xxx/yyy/yyy` 这种重复。
      */
     private fun appendPathIfMissing(baseUrl: String, suffix: String): String {
         val normalizedBase = baseUrl.trimEnd('/')
