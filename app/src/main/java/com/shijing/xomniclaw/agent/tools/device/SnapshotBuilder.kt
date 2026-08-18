@@ -6,6 +6,10 @@ package com.shijing.xomniclaw.agent.tools.device
  *
  * OmniClaw adaptation: build snapshot from Android accessibility tree.
  * Converts ViewNode list to RefNode list with Playwright-style ref IDs.
+ *
+ * 🔧PATCHED for Unity/Game Support:
+ * - يحتفظ بـ SurfaceView / UnityPlayer حتى لو بدون نص أو clickable
+ * - يمنحها role = game_surface ليتم التعرف عليها
  */
 
 import android.graphics.Rect
@@ -32,17 +36,32 @@ object SnapshotBuilder {
             val isInteractive = viewNode.clickable || viewNode.focusable || viewNode.scrollable
             val hasText = !displayText.isNullOrBlank()
 
-            if (isInteractive || hasText) {
+            // 🔧 PATCH: هل هذه عقدة لعبة؟
+            val isGameSurface = UnityGameDetector.isGameSurfaceClass(viewNode.className)
+
+            // الأصل: فقط إذا كان interactive أو له نص
+            // الجديد: احتفظ أيضاً بـ Game Surfaces مهمة حتى لو غير تفاعلية ظاهرياً
+            val shouldKeep = isInteractive || hasText || isGameSurface
+
+            if (shouldKeep) {
                 val shortClass = viewNode.className?.substringAfterLast('.') ?: "View"
-                val role = mapToRole(shortClass, viewNode)
+                val role = if (isGameSurface) {
+                    "game_surface"
+                } else {
+                    mapToRole(shortClass, viewNode)
+                }
                 val ref = "e${refCounter++}"
+
+                // للألعاب، نعتبرها clickable حتى لو النظام يقول غير ذلك
+                // لأن الضغط على الـ Surface نفسه قد يكون له معنى
+                val effectiveClickable = viewNode.clickable || isGameSurface
 
                 refNodes.add(RefNode(
                     ref = ref,
                     role = role,
                     text = displayText?.take(100),
                     bounds = Rect(viewNode.left, viewNode.top, viewNode.right, viewNode.bottom),
-                    clickable = viewNode.clickable,
+                    clickable = effectiveClickable,
                     editable = viewNode.focusable && shortClass.contains("Edit", ignoreCase = true),
                     scrollable = viewNode.scrollable,
                     focusable = viewNode.focusable,
@@ -56,7 +75,36 @@ object SnapshotBuilder {
             }
         }
 
-        Log.d(TAG, "Built ${refNodes.size} ref nodes from ${nodes.size} view nodes")
+        Log.d(TAG, "Built ${refNodes.size} ref nodes from ${nodes.size} view nodes (game-aware)")
+
+        // 🔧 PATCH: إذا لم يبق شيء وكانت هناك SurfaceView، احتفظ بأكبر واحدة على الأقل
+        // حتى يعرف agent أن هناك شيئاً على الشاشة
+        if (refNodes.isEmpty() && nodes.isNotEmpty()) {
+            // ابحث عن أكبر عقدة
+            val largest = nodes.maxByOrNull { (it.right - it.left) * (it.bottom - it.top) }
+            largest?.let { viewNode ->
+                val shortClass = viewNode.className?.substringAfterLast('.') ?: "View"
+                val ref = "e${refCounter++}"
+                refNodes.add(RefNode(
+                    ref = ref,
+                    role = if (UnityGameDetector.isGameSurfaceClass(viewNode.className)) "game_surface" else "element",
+                    text = viewNode.text?.take(100) ?: viewNode.contentDesc?.take(100),
+                    bounds = Rect(viewNode.left, viewNode.top, viewNode.right, viewNode.bottom),
+                    clickable = true, // افترض clickable كملاذ أخير
+                    editable = false,
+                    scrollable = false,
+                    focusable = false,
+                    checkable = false,
+                    checked = false,
+                    selected = false,
+                    depth = 0,
+                    className = shortClass,
+                    packageName = viewNode.packageName
+                ))
+                Log.d(TAG, "Fallback: kept largest node as ref ${ref} because original list was empty")
+            }
+        }
+
         return refNodes
     }
 
@@ -81,6 +129,11 @@ object SnapshotBuilder {
             className.contains("ListView", ignoreCase = true) -> "list"
             className.contains("ScrollView", ignoreCase = true) -> "scrollable"
             className.contains("WebView", ignoreCase = true) -> "webview"
+            // Unity/Game
+            className.contains("Unity", ignoreCase = true) -> "game_surface"
+            className.contains("SurfaceView", ignoreCase = true) -> "game_surface"
+            className.contains("GLSurfaceView", ignoreCase = true) -> "game_surface"
+            className.contains("TextureView", ignoreCase = true) -> "game_surface"
             node.scrollable -> "scrollable"
             node.clickable -> "button"
             node.focusable -> "input"
