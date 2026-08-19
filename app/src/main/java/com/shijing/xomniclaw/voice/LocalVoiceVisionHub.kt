@@ -178,10 +178,55 @@ class LocalVoiceVisionHub(
 
     private fun transcribeWav(wavBytes: ByteArray, sttProvider: ProviderConfig): String {
         val sttModel = sttProvider.models.firstOrNull()?.id.orEmpty()
-        val body = MultipartBody.Builder()
+        // 🔧 FIX: دعم العربية وجميع اللغات - لا تجبر اللغة على الصينية
+        // المشكلة الأصلية: كان language="zh" ثابت، فعند التحدث بالعربية كان Whisper يحاول
+        // تفسير الصوت العربي كـ صيني وينتج نص صيني عشوائي مثل "是否有可能"
+        // الحل: اكتشاف تلقائي للغة أو استخدام لغة النظام
+        val systemLocale = try { java.util.Locale.getDefault().language?.lowercase() ?: "auto" } catch (_: Exception) { "auto" }
+        val autoDetectLanguages = setOf("auto", "detect", "")
+        
+        // لغة STT المفضلة: من إعدادات المستخدم إن وجدت، أو لغة النظام، أو auto
+        // ملاحظة: Groq Whisper يدعم ar, en, zh, ru, إلخ. إذا حذفنا language سيكتشف تلقائياً
+        val preferredLang: String? = when {
+            // إذا كان النظام عربي، استخدم ar
+            systemLocale.startsWith("ar") -> "ar"
+            // إذا كان الجهاز مضبوط صيني، استخدم zh
+            systemLocale.startsWith("zh") -> "zh"
+            // روسي
+            systemLocale.startsWith("ru") -> "ru"
+            // إنجليزي
+            systemLocale.startsWith("en") -> "en"
+            // فرنسي
+            systemLocale.startsWith("fr") -> "fr"
+            // ألماني
+            systemLocale.startsWith("de") -> "de"
+            // تركي
+            systemLocale.startsWith("tr") -> "tr"
+            // إسباني
+            systemLocale.startsWith("es") -> "es"
+            // فارسي
+            systemLocale.startsWith("fa") -> "fa"
+            // أوردو
+            systemLocale.startsWith("ur") -> "ur"
+            // للغات الأخرى أو إذا أردت كشف تلقائي تام، اجعلها null (سيتم حذف param اللغة)
+            else -> null // null = auto-detect (أفضل للمستخدمين متعددي اللغات)
+        }
+
+        val builder = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
             .addFormDataPart("model", sttModel)
-            .addFormDataPart("language", "zh")
+
+        // أضف اللغة فقط إذا كانت محددة، وإلا دع Whisper يكتشف تلقائياً (أفضل للعربية)
+        // ملاحظة: بعض المزودين مثل SiliconFlow SenseVoice يستخدمون auto أيضاً عند حذف language
+        if (preferredLang != null && preferredLang !in autoDetectLanguages) {
+            builder.addFormDataPart("language", preferredLang)
+        } else {
+            // لا نضيف language -> Whisper سيكتشف تلقائياً (يعمل بشكل ممتاز مع العربية)
+            // بالنسبة لـ Groq و OpenAI، حذف language يعني auto-detect
+            android.util.Log.i("LocalVoiceVisionHub", "STT auto-detect language (system=${systemLocale}, preferred=null) - best for Arabic multilingual users")
+        }
+
+        val body = builder
             .addFormDataPart(
                 "file",
                 "recording.wav",
