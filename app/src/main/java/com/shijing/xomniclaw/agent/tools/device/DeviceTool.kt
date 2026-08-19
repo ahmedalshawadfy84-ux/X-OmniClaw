@@ -524,8 +524,8 @@ class DeviceTool(private val context: Context) : Tool {
             if (isGameMode && nodes.size <= 3) {
                 appendLine("")
                 appendLine("[ملاحظة Game Mode] refs قليلة (${nodes.size}) لأن اللعبة ترسم على GPU عبر Unity/SurfaceView. استخدم فقط target-based tapping.")
-                appendLine("مثال: device(action="act", kind="tap", target="green PLAY button at bottom center")")
-                appendLine("للـ Joystick: device(action="act", kind="swipe", startX=200, startY=1600, endX=400, endY=1600, durationMs=400)")
+                appendLine("مثال: device(action='act', kind='tap', target='green PLAY button at bottom center')")
+                appendLine("للـ Joystick: device(action='act', kind='swipe', startX=200, startY=1600, endX=400, endY=1600, durationMs=400)")
             }
 
             append(body)
