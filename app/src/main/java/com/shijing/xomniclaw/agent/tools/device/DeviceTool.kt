@@ -382,6 +382,7 @@ class DeviceTool(private val context: Context) : Tool {
             "待 snapshot 首行 **package=com.lemon.lv** 后再点「一键成片」。"
     }
 
+
     // ==================== snapshot ====================
 
     private suspend fun executeSnapshot(args: Map<String, Any?>): ToolResult {
@@ -394,6 +395,11 @@ class DeviceTool(private val context: Context) : Tool {
 
         val proxy = AccessibilityProxy
 
+        // Get screen info early for Game Detection
+        val dmEarly = context.resources.displayMetrics
+        val earlyW = dmEarly.widthPixels
+        val earlyH = dmEarly.heightPixels
+
         val viewNodes = try {
             proxy.dumpViewTree(useCache = false)
         } catch (e: IllegalStateException) {
@@ -404,17 +410,34 @@ class DeviceTool(private val context: Context) : Tool {
             return ToolResult.error("获取 UI 树失败: ${e.message}。请检查无障碍服务是否正常运行。")
         }
 
+        // 🔧 PATCH: Unity/Game fallback - don't return error immediately if likely a game
+        val currentPackageEarlyForEmptyCheck = try { proxy.getCurrentPackageName() } catch (_: Exception) { "" }
         if (viewNodes.isEmpty()) {
-            val accessibilityOn = try { proxy.isConnected.value == true && proxy.isServiceReady() } catch (_: Exception) { false }
-            val status = if (accessibilityOn) "无障碍服务: ✅ 已开启（但当前页面无可识别元素，可能页面正在加载，建议等 1-2 秒重试）" 
-                         else "无障碍服务: ❌ 未开启。请到 设置 → 无障碍 → OmniClaw 开启无障碍权限。"
-            return ToolResult.error(status)
+            // If we have no nodes, check if it might be a fullscreen game (GPU rendering)
+            // In that case we will NOT error, but continue with empty list to trigger Game Mode banner
+            val isLikelyGameWhenEmpty = currentPackageEarlyForEmptyCheck.isNotBlank()
+            if (!isLikelyGameWhenEmpty) {
+                val accessibilityOn = try { proxy.isConnected.value == true && proxy.isServiceReady() } catch (_: Exception) { false }
+                val status = if (accessibilityOn) "无障碍服务: ✅ 已开启（但当前页面无可识别元素，可能页面正在加载，建议等 1-2 秒重试）" 
+                             else "无障碍服务: ❌ 未开启。请到 设置 → 无障碍 → OmniClaw 开启无障碍权限。"
+                return ToolResult.error(status)
+            } else {
+                Log.w(TAG, "viewNodes empty but likely GAME MODE (pkg=$currentPackageEarlyForEmptyCheck) - forcing fallback snapshot instead of error")
+                // continue with empty list - SnapshotBuilder will keep largest, and detector will fire
+            }
         }
 
         val nodes = SnapshotBuilder.buildFromViewNodes(viewNodes)
         val topPackages = collectTopPackages(nodes)
         val currentPackage = try { proxy.getCurrentPackageName() } catch (_: Exception) { "" }
-        val packageForHeader = currentPackage.ifBlank { topPackages.firstOrNull()?.first ?: "unknown" }
+        val packageForHeader = currentPackage.ifBlank { topPackages.firstOrNull()?.first ?: currentPackageEarlyForEmptyCheck.ifBlank { "unknown" } }
+
+        // 🔧 PATCH: Unity / Game Detection
+        val gameDetection = UnityGameDetector.detect(viewNodes, nodes, earlyW, earlyH)
+        val isGameMode = gameDetection.isGame
+        // In game mode, force YOLO even if setting is false, because UI tree is useless
+        val effectiveIncludeYolo = includeYoloFusedTree || isGameMode
+
         val snapshotId = refManager.updateRefs(
             nodes,
             packageForHeader.takeIf { it.isNotBlank() && it != "unknown" }
@@ -434,9 +457,10 @@ class DeviceTool(private val context: Context) : Tool {
             }
         } catch (e: Exception) { null }
 
-        val (body, yoloSnapshotResult) = if (includeYoloFusedTree) {
+        val (body, yoloSnapshotResult) = if (effectiveIncludeYolo) {
             coroutineScope {
                 // 仅在显式开启时，并行执行 YOLO；默认 snapshot 仍只返回 UI tree。
+                // PATCH: في وضع اللعبة أيضاً يشغل YOLO تلقائياً لتحسين الرؤية
                 val yoloDeferred = async(Dispatchers.Default) {
                     yoloSnapshotEngine.buildSnapshotResult(viewNodes, nodes)
                 }
@@ -464,6 +488,12 @@ class DeviceTool(private val context: Context) : Tool {
             }
             appendLine("]")
             appendLine("提示：[约束] 每次执行 act/open 等会改变界面的操作前，必须先 snapshot；首行 seq 仅便于日志对照，勿作为工具入参或校验依据。")
+
+            // 🔧 PATCH: بانر وضع اللعبة - يظهر أولاً إذا تم الكشف
+            if (isGameMode) {
+                appendLine(UnityGameDetector.buildGameModeBanner(gameDetection, packageForHeader, width, height))
+            }
+
             buildOverlaySnapshotInfo(packageForHeader, topPackages)?.let { appendLine(it) }
             buildPermissionOverlaySnapshotHint(packageForHeader, topPackages)?.let { appendLine(it) }
 
@@ -489,6 +519,15 @@ class DeviceTool(private val context: Context) : Tool {
                         "相册多选：大块无文案 button 多为缩略图（易进预览）；勾选圈多为 link（可 selected）。误点大图时引擎会尽量改点到同格右上角圈。"
                 )
             }
+
+            // Extra note if game mode and low refs
+            if (isGameMode && nodes.size <= 3) {
+                appendLine("")
+                appendLine("[ملاحظة Game Mode] refs قليلة (${nodes.size}) لأن اللعبة ترسم على GPU عبر Unity/SurfaceView. استخدم فقط target-based tapping.")
+                appendLine("مثال: device(action="act", kind="tap", target="green PLAY button at bottom center")")
+                appendLine("للـ Joystick: device(action="act", kind="swipe", startX=200, startY=1600, endX=400, endY=1600, durationMs=400)")
+            }
+
             append(body)
         }
 
@@ -498,7 +537,14 @@ class DeviceTool(private val context: Context) : Tool {
         return ToolResult.success(
             output,
             metadata = buildMap {
-                put("include_yolo_fused_tree", includeYoloFusedTree)
+                put("include_yolo_fused_tree", effectiveIncludeYolo)
+                put("include_yolo_fused_tree_requested", includeYoloFusedTree)
+                put("is_unity_game", isGameMode)
+                put("game_coverage", gameDetection.coverageRatio)
+                put("game_is_unity", gameDetection.isUnity)
+                put("game_reason", gameDetection.reason)
+                put("ref_count", nodes.size)
+                put("view_node_count", viewNodes.size)
                 yoloSnapshotResult?.let {
                     put("yolo_status", it.status)
                     put("yolo_raw_count", it.rawDetections.size)
