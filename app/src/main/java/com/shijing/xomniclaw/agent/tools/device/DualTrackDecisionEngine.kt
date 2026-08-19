@@ -612,12 +612,56 @@ class DualTrackDecisionEngine(private val context: Context) {
         // Log a compact view of the current UI summary for debugging.
         Log.d(TAG, "VLM grounding UI summary:\n${uiSummary.take(2000)}")
         val imageB64 = Base64.encodeToString(screenshotJpeg, Base64.NO_WRAP)
-        val systemPrompt = """
+        // 🔧 PATCH: Game-aware system prompt - يحسن الرؤية لألعاب Unity
+        fun isGameTarget(t: String): Boolean {
+            val lower = t.lowercase()
+            val gameKeywords = listOf(
+                "play", "start", "attack", "fire", "shoot", "joystick", "jump", "run",
+                "pause", "resume", "settings", "gear", "coin", "gold", "loot", "chest",
+                "enemy", "boss", "sword", "gun", "weapon", "skill", "ability", "map",
+                "quest", "battle", "exit", "quit", "close", "x button", "continue",
+                "tap to", "collect", "claim", "reward", "victory", "defeat", "game",
+                "character", "hero", "menu", "shop", "inventory"
+            )
+            return gameKeywords.any { lower.contains(it) }
+        }
+
+        val isGameMode = isGameTarget(target) || uiSummary.contains("game_surface", ignoreCase = true) || uiSummary.contains("Unity", ignoreCase = true)
+
+        val systemPrompt = if (isGameMode) {
+            """
+            You are a GAME VISION engine for Unity/Android games (Unity, Unreal, Cocos, SurfaceView).
+            Input: A game screenshot (GPU rendered) and a query.
+            Output: JSON only {"x":int,"y":int,"confidence":float,"reason":string,"target":string}
+
+            GAMING MODE - CRITICAL RULES:
+            - Game UI is rendered on GPU via SurfaceView/TextureView, NOT Android Views. Look for colorful, custom-drawn buttons.
+            - Common game button locations:
+              * PLAY/START/TAP TO START: bottom center, large green/blue/yellow, often glowing
+              * Attack/Fire/Shoot: bottom right, red/orange circle, sword/gun icon
+              * Joystick/Move: bottom left, semi-transparent grey circle with inner dot
+              * Jump/Dash: bottom right, above attack, often blue/green
+              * Pause/Settings/Map: top right or top left, gear icon or II icon
+              * Close/X/Exit: top right corner, small X
+              * Loot/Coin/Chest: center screen, shining, gold/yellow
+              * Skill/Ability: bottom center to bottom right, colored circles (blue/red/green)
+              * Continue/Claim/Collect/Reward: center or bottom, bright colors
+            - Color cues: green=play/start/confirm, red=attack/delete/close, yellow/gold=coin/reward/loot, blue=skill/jump, grey=joystick
+            - If target says "joystick", return its CENTER (e.g. 200,1600 on 1080x1920)
+            - For swipe: target may still be a point - return the joystick center, high-level will convert to swipe
+            - If not found: x=-1,y=-1,confidence<=0.3
+            - reason: must explain visual cues: color, shape, icon, position, glow
+            - Be precise: center of button, not edge
+
+            Return pure JSON only, no markdown.
+            """.trimIndent()
+        } else {
+            """
             You are a dual-mode visual engine for Android UI automation. 
             Input: A screenshot and a query. 
             Output: JSON only (no markdown, no prose).
 
-            Required schema: {"x":int, "y":int, "confidence":float, "reason":string, "target":string}
+            Required schema: {"x":int,"y":int,"confidence":float,"reason":string,"target":string}
 
             OPERATING MODES:
             1. Grounding Mode (Locate/Find):
@@ -637,7 +681,8 @@ class DualTrackDecisionEngine(private val context: Context) {
             - Never add new keys. 
             - Use 'reason' as the primary output for semantic analysis.
             - If a query implies both, prioritize finding a clickable element.
-        """.trimIndent()
+            """.trimIndent()
+        }
         val userText = buildString {
             append("Target to tap: ").append(target).append("\n")
             append("UI summary:\n").append(uiSummary.take(8000))
